@@ -1,0 +1,6 @@
+interface:
+  display_name: "App 功能冲突调研分析 V1.0版本"
+  short_description: "输入App名称，调研用户反馈与功能冲突，输出有证据的原因分析和迭代建议网页"
+  default_prompt: "使用 $contradiction-review-v1 分析【App名称】的用户反馈与功能冲突，提出具体迭代建议并交付交互网页。"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,37 @@
+{
+  "record_id": "synthetic-mixed-01",
+  "source": "synthetic-not-live-social-data",
+  "text": "这家公司真让人生气。但升级后，屏蔽的歌曲还在推荐，能不能让屏蔽生效。",
+  "claims": [
+    {
+      "claim_id": "c1",
+      "anchor": "这家公司真让人生气",
+      "feature": null,
+      "feature_anchor": null,
+      "kind": "attitude",
+      "basis": "unknown",
+      "emotion": "high",
+      "event_signal": "unknown",
+      "context_dependency": "none",
+      "experience_truth": "unverified",
+      "motive_judgment": "not_inferred"
+    },
+    {
+      "claim_id": "c2",
+      "anchor": "屏蔽的歌曲还在推荐，能不能让屏蔽生效",
+      "feature": "歌曲屏蔽反馈",
+      "feature_anchor": "屏蔽",
+      "kind": "problem",
+      "basis": "self_report",
+      "expected": "屏蔽的歌曲不再被推荐",
+      "observed": "屏蔽的歌曲仍被推荐",
+      "requested_change": "让屏蔽生效",
+      "decision_direction": "fix_feedback_control",
+      "emotion": "high",
+      "event_signal": "none",
+      "context_dependency": "none",
+      "experience_truth": "unverified",
+      "motive_judgment": "not_inferred"
+    }
+  ]
+}

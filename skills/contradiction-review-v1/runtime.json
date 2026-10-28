@@ -1,0 +1,53 @@
+{
+  "workspace": ".",
+  "python": ".venv/bin/python",
+  "mediacrawler": "vendor/MediaCrawler",
+  "revision": "8f583999006d5b692272c608440e193ca282e73b",
+  "runtime": ".app-conflict-runtime-v1",
+  "output": "output/app-conflict-research-v1",
+  "browser_executable": ".setup/browser-not-selected",
+  "profiles": {
+    "bili": "research",
+    "xhs": "default",
+    "wb": "research",
+    "douyin": "research",
+    "zhihu": "research"
+  },
+  "cached_sources": {},
+  "source_scope": {
+    "core_social": [
+      "xhs",
+      "wb",
+      "zhihu"
+    ],
+    "enabled_support_social": [
+      "bili",
+      "douyin"
+    ],
+    "baseline": [
+      "appbao"
+    ],
+    "targeted": [
+      "appinn",
+      "v2ex"
+    ],
+    "optional_not_default": [
+      "jike",
+      "douban",
+      "maimai"
+    ],
+    "local_adapter_pending": [],
+    "adapter_live_unverified": []
+  },
+  "browser_preferences": {
+    "default_mode": "background",
+    "mute_before_navigation": true,
+    "foreground_only_for": [
+      "manual_login",
+      "manual_verification"
+    ],
+    "automatic_foreground_fallback": false,
+    "routine_reopen": false
+  },
+  "node": null
+}

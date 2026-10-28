@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>App 功能迭代调研</title>
+<style>
+__REPORT_CSS__
+</style>
+</head>
+<body>
+<header><div><div class="brand">APP RESEARCH · 功能冲突调研分析</div><h1 id="title"></h1></div><nav class="primary-nav" aria-label="研究页面"><button data-view="overview">研究总览</button><button data-view="issues">功能与议题</button></nav><div class="header-actions"><span class="status">AI辅助分析</span><button id="theme-toggle" aria-label="切换页面配色">浅色</button><button id="source-toggle">来源与范围</button></div></header>
+<main id="overview-view" class="overview-page"><section class="metrics" id="metrics" aria-label="全局样本与议题概览"></section><div id="overview-content" class="overview-content"></div></main>
+<main id="issues-view" class="workspace" hidden>
+<aside aria-label="议题列表"><div class="tools"><input id="search" aria-label="检索议题" placeholder="搜索功能或议题"><select id="filter" aria-label="筛选关系"><option value="">全部关系</option></select></div><div id="issues"></div></aside>
+<section class="right" aria-label="议题详情"><nav class="tabs" role="tablist" aria-label="分析视图"><select id="mobile-topic" class="mobile-topic" aria-label="选择功能议题"></select><button role="tab" data-tab="analysis">结论与改法</button><button role="tab" data-tab="issue-data">议题数据</button><button role="tab" data-tab="evidence">原文证据</button><button role="tab" data-tab="review">你的判断与下一步</button></nav><div class="content" id="content"></div><div id="review-dock" class="review-dock" aria-label="提交所选任务" hidden></div></section>
+</main>
+<dialog id="sources-dialog" class="sources-dialog" aria-label="采集来源与研究范围"><div class="sources-heading"><h2>采集来源与研究范围</h2><button id="source-close" aria-label="关闭来源说明">关闭</button></div><div class="sources-body"><div id="scope"></div><div id="sources"></div><ul id="limits"></ul></div></dialog>
+<dialog id="analytics-dialog" class="sources-dialog analytics-dialog" aria-label="统计对应原文"><div class="sources-heading"><h2 id="analytics-title"></h2><button id="analytics-close" aria-label="关闭统计原文">关闭</button></div><div class="sources-body"><p id="analytics-definition"></p><label>筛选原文类型 <select id="record-code" aria-label="筛选统计原文类型"><option value="">全部类型</option><option value="P">问题／诉求</option><option value="V">功能价值／偏好</option><option value="C">辅助背景</option><option value="U">上下文待核</option><option value="G">非功能内容</option><option value="E">事件表态</option></select></label><p id="record-count" class="muted"></p><div id="analytics-records"></div></div></dialog>
+<div id="chart-tooltip" class="chart-tooltip" role="tooltip" hidden></div>
+<dialog id="reason-dialog" class="sources-dialog reason-dialog" aria-label="结构图节点详情"><div class="sources-heading"><h2 id="reason-title"></h2><button id="reason-close" aria-label="关闭节点详情">关闭</button></div><div id="reason-body" class="sources-body"></div></dialog>
+<script type="application/json" id="report-data">__REPORT_JSON__</script>
+<script>
+'use strict';
+const report=JSON.parse(document.getElementById('report-data').textContent);
+const relations={conflict_candidate:['两种需求暂时难同时满足','var(--red)'],compatible_preferences:['两种需求可以一起满足','var(--green)'],condition_difference:['设备、版本或场景不同，要分开看','var(--blue)'],one_sided_issue:['现有反馈想改进这里，还没看到相反意见','var(--amber)'],insufficient_context:['信息还不够，需要补充','var(--muted)']};
+const relationExplanation={conflict_candidate:'用户对同一功能提出了暂时难以同时满足的要求，需要比较适用场景和代价。',compatible_preferences:'这些要求能够同时满足，设计重点是让功能之间配合。',condition_difference:'这些反馈来自不同设备、版本、时间或使用场景。同一个功能可能有人能用、有人不能用，应先查清差别在哪里，再决定怎么改。',one_sided_issue:'目前这些用户都希望改进这项体验；我们还没有找到要求相反做法的具体反馈，因此暂时不能称为两方冲突。',insufficient_context:'现有材料还缺少判断所需的信息，下一步先补齐具体使用条件。'};
+const byId=new Map(report.evidence.map(e=>[e.id,e]));
+const sourceNames={appstore:'App Store',web:'公开网页',xhs:'小红书',wb:'微博',zhihu:'知乎',bili:'B站',douyin:'抖音',appbao:'应用宝',v2ex:'V2EX',appinn:'小众软件论坛'};
+const scopeNames={client:'客户端',version:'版本',purpose:'用途',period:'时间范围',payment:'付费条件',G1:'范围确认'};
+let selected=report.issues[0]?.id,tab='analysis',view='overview',decisions={};
+const storageKey='app-conflict-review:'+report.bundle_id;
+try{decisions=JSON.parse(localStorage.getItem(storageKey)||'{}');if(!decisions||typeof decisions!=='object'||Array.isArray(decisions))decisions={}}catch(_){decisions={}}
+function el(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);if(cls)e.className=cls;return e}
+function add(parent,tag,text,cls){const e=el(tag,text,cls);parent.append(e);return e}
+function list(parent,items){const ul=add(parent,'ul');for(const v of items||[])add(ul,'li',v);return ul}
+function tone(node,key){const r=relations[key];node.style.setProperty('--tone',r[1]);node.style.setProperty('--wash',`color-mix(in srgb, ${r[1]} 10%, var(--panel))`);return r[0]}
+function tag(parent,key){const b=add(parent,'span',relations[key][0],'tag');tone(b,key)}
+function count(v){return Number.isInteger(v)?v.toLocaleString('zh-CN'):'待核'}
+function displayDate(v){const d=new Date(v);return v&&!Number.isNaN(d.getTime())?d.toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}):'时间待核'}
+document.getElementById('title').textContent=report.app+' · 功能迭代调研';document.title=report.app+' · 功能迭代调研';
+const recentCount=report.sources.some(s=>Array.isArray(s.recent_posts))?report.sources.reduce((n,s)=>n+(s.recent_posts?.length||0),0):null;
+const headlineMetrics=[['已审阅原始评论',report.counts.raw_comments],['与功能相关的反馈',report.counts.screened_feedback],['近期相关帖子／视频',recentCount],['研究议题',report.issues.length]];
+for(const [label,value] of headlineMetrics){const m=add(document.getElementById('metrics'),'div',undefined,'metric');add(m,'strong',count(value));add(m,'span',label)}
+for(const [key,value] of Object.entries(relations)){const o=add(document.getElementById('filter'),'option',value[0]);o.value=key}
+for(const [k,v] of Object.entries(report.scope))add(document.getElementById('scope'),'p',(scopeNames[k]||k)+'：'+(v==null||v==='unknown'?'待核验':v),'muted');
+for(const source of report.sources){const row=add(document.getElementById('sources'),'div',undefined,'source-row');add(row,'strong',source.name+' · '+source.status);if(source.note)add(row,'div',source.note,'muted');if(source.recent_posts?.length){const detail=add(row,'details');add(detail,'summary','查看近期帖子／视频文字（按发布时间）');const posts=add(detail,'div',undefined,'source-posts');for(const post of [...source.recent_posts].sort((a,b)=>(b.published_at||'').localeCompare(a.published_at||''))){const item=add(posts,'article',undefined,'source-post');const link=add(item,'a',post.title||'无标题帖子');link.href=post.source_url;link.target='_blank';link.rel='noopener noreferrer';add(item,'small',displayDate(post.published_at)+' · '+(post.role||'待判读材料'))}}}
+for(const limit of report.limitations)add(document.getElementById('limits'),'li',limit);
+function drawList(){
+ const root=document.getElementById('issues');root.replaceChildren();const q=document.getElementById('search').value.trim().toLowerCase(),filter=document.getElementById('filter').value;
+ const items=report.issues.filter(i=>(!filter||filter===i.relation)&&(!q||(i.title+' '+i.decision_object).toLowerCase().includes(q)));
+ if(!items.some(i=>i.id===selected))selected=items[0]?.id;
+ if(!items.length)add(root,'p','当前没有匹配议题。','empty');
+ for(const i of items){const b=add(root,'button',undefined,'issue');tone(b,i.relation);b.setAttribute('aria-pressed',String(i.id===selected));add(b,'strong',i.decision_object);add(b,'p',i.title,'issue-summary');add(b,'small',i.material_summary||(i.main_collection_eligible?'主收藏候选 · '+count(i.related_feedback)+' 条关联反馈':'观察与补证 · '+(i.related_feedback==null?'数量待核':count(i.related_feedback)+' 条关联反馈')));tag(b,i.relation);b.onclick=()=>goToIssue(i.id,tab)}
+}
+function drawAnalysis(root,i){
+ if(drawReasoning(root,i))return;
+ add(root,'p',i.interpretation||'解释尚待补充。','lead');
+ const relation=add(root,'div',undefined,'relation-note');tag(relation,i.relation);add(relation,'span',relationExplanation[i.relation]);
+ add(root,'h3','我们为什么先验证这个问题');list(root,i.ranking_reasons?.length?i.ranking_reasons:['我们还需要核对排序依据。']);
+ add(root,'h3','这些问题可能为什么发生');
+ if(!i.hypotheses?.length)add(root,'p','现有材料不足以提出有依据的原因解释。','muted');
+ for(const h of i.hypotheses||[]){const box=add(root,'div',undefined,'box hypothesis');add(box,'h4',h.statement);add(box,'div','待验证假设','note');if(h.disconfirming_question)add(box,'p','如何区分：'+h.disconfirming_question);if(h.support_ids?.length)add(box,'small','依据：'+h.support_ids.join('、'),'muted')}
+ add(root,'h3',report.app+'团队可以怎样改，怎样验证');
+ if(!i.options?.length)add(root,'p','先补充证据，再决定改动。','muted');
+ for(const o of i.options||[]){const box=add(root,'div',undefined,'box option');add(box,'h4',o.action);add(box,'p','适用条件：'+o.conditions);add(box,'p','代价与影响：'+o.tradeoff);add(box,'p','验证任务：'+o.validation_task)}
+ if(i.conditions?.length){const boundary=add(root,'details',undefined,'boundary');add(boundary,'summary','查看这项判断的适用条件与证据缺口');list(boundary,i.conditions)}
+ const b=add(root,'button','查看对应原文');b.onclick=()=>{tab='evidence';document.getElementById('content').scrollTop=0;draw()};
+}
+function drawEvidence(root,i){
+ const groups=new Map();for(const a of i.anchors){if(!groups.has(a.evidence_id))groups.set(a.evidence_id,[]);groups.get(a.evidence_id).push(a.anchor)}
+ for(const [eid,anchors] of groups){const e=byId.get(eid),box=add(root,'article',undefined,'evidence');box.dataset.evidenceId=eid;box.tabIndex=-1;add(box,'small',(sourceNames[e.platform]||e.platform)+' · '+displayDate(e.published_at),'muted');for(const anchor of anchors)add(box,'blockquote',anchor);add(box,'div',e.context_status||'上下文状态未核验','note');const detail=add(box,'details');add(detail,'summary','展开上下文与引用位置');add(detail,'pre',e.context_text||e.body);add(detail,'p','证据ID：'+e.id);add(detail,'p','直接回复对象：'+(e.parent_id||'本条未记录直接回复对象'));if(e.source_url){const link=add(box,'a','打开来源原文');link.href=e.source_url;link.target='_blank';link.rel='noopener noreferrer'}else add(box,'p','来源文件：'+e.source_file,'muted')}
+}
+__ANALYTICS_SCRIPT__
+__HANDOFF_SCRIPT__
+function showView(next){
+ view=next;document.getElementById('overview-view').hidden=view!=='overview';document.getElementById('issues-view').hidden=view!=='issues';
+ for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===view));
+ if(view==='issues')draw();
+}
+function goToIssue(id,nextTab='analysis'){selected=id;tab=nextTab;showView('issues');document.getElementById('content').scrollTop=0}
+function draw(){
+ hideChartTip();clearReasonWires();resetReviewDock();drawList();for(const b of document.querySelectorAll('[data-tab]'))b.setAttribute('aria-selected',String(b.dataset.tab===tab));
+ const root=document.getElementById('content');root.replaceChildren();const i=report.issues.find(v=>v.id===selected);
+ if(!i){add(root,'h2',report.issues.length?'当前没有匹配议题':'当前证据不足');add(root,'p',report.issues.length?'请清空检索或调整关系筛选。':'尚未形成可判定议题，请查看采集来源与补证方向。','empty');return}
+ add(root,'p','当前议题的决策对象','eyebrow');add(root,'h2',i.decision_object,'decision-title');if(tab!=='issue-data'&&!(tab==='analysis'&&i.insight)){const finding=add(root,'section',undefined,'finding');add(finding,'h3','当前结论');add(finding,'p',i.title)}
+ document.getElementById('mobile-topic').value=i.id;
+ if(tab==='analysis')drawAnalysis(root,i);else if(tab==='issue-data')drawIssueData(root,i);else if(tab==='evidence')drawEvidence(root,i);else drawReview(root,i);
+}
+for(const i of report.issues){const o=add(document.getElementById('mobile-topic'),'option',i.decision_object);o.value=i.id}
+document.getElementById('mobile-topic').onchange=e=>goToIssue(e.target.value,tab);
+const sourceDialog=document.getElementById('sources-dialog');document.getElementById('source-toggle').onclick=()=>sourceDialog.showModal();document.getElementById('source-close').onclick=()=>sourceDialog.close();
+document.getElementById('search').oninput=draw;document.getElementById('filter').onchange=draw;
+for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{tab=b.dataset.tab;document.getElementById('content').scrollTop=0;draw()};
+for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>showView(b.dataset.view);
+let colorTheme='dark';try{colorTheme=localStorage.getItem('app-conflict-color-theme')||'dark'}catch(_){}
+function applyColorTheme(){document.documentElement.dataset.theme=colorTheme;document.getElementById('theme-toggle').textContent=colorTheme==='dark'?'浅色':'深色'}
+document.getElementById('theme-toggle').onclick=()=>{colorTheme=colorTheme==='dark'?'light':'dark';try{localStorage.setItem('app-conflict-color-theme',colorTheme)}catch(_){}applyColorTheme()};applyColorTheme();
+drawOverview(document.getElementById('overview-content'));draw();showView(view);
+</script>
+</body></html>

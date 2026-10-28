@@ -1,0 +1,11 @@
+# Core runtime for collection and reports (setup.py default).
+# The full upstream MediaCrawler stack is in requirements-lock.txt and is optional.
+playwright==1.64.1
+httpx==0.28.1
+tenacity==8.2.2
+pydantic==2.14.1
+xhshow==0.2.0
+PyExecJS==1.5.1
+pillow==13.0.0
+pyhumps==3.8.0
+parsel==1.9.1

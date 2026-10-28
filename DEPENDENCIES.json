@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "release_version": "1.0.0",
+  "core_skill": "contradiction-review-v1",
+  "presentation_skills": [
+    {
+      "name": "ppt-master",
+      "repository": "hugohe3/ppt-master",
+      "commit": "f3660bfcd20bc07c29260b7e330261a01a2b5a6d",
+      "path": "skills/ppt-master",
+      "license": "MIT",
+      "version": "6.7.3",
+      "license_path": "LICENSE"
+    },
+    {
+      "name": "consulting-deck-expert",
+      "repository": "hiamberhuang/presentation-agent-skills",
+      "commit": "9e868af4104d1c07828701d4c36486bfa3ff75d7",
+      "path": "skills/consulting-deck-expert",
+      "license": "MIT",
+      "license_path": "LICENSE"
+    },
+    {
+      "name": "presentation-qa",
+      "repository": "hiamberhuang/presentation-agent-skills",
+      "commit": "9e868af4104d1c07828701d4c36486bfa3ff75d7",
+      "path": "skills/presentation-qa",
+      "license": "MIT",
+      "license_path": "LICENSE"
+    }
+  ],
+  "host_optional_workflows": [
+    "build-report",
+    "documents",
+    "spreadsheets",
+    "validate-data"
+  ],
+  "host_optional_workflow_source_bundled": false
+}

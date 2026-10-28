@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "report_id": "netease-player-shape-preview",
+  "app": "网易云音乐",
+  "scope": {
+    "client": "unknown",
+    "version": "unknown",
+    "purpose": "已采文字的模板演示，非完整调研报告",
+    "G1": "本例不构成范围审批"
+  },
+  "counts": {
+    "raw_comments": 4,
+    "screened_feedback": null,
+    "qualified_in_scope": null
+  },
+  "sources": [
+    {
+      "name": "小红书",
+      "status": "历史实采文字示例",
+      "note": "4条引文用于验证网页生成器，未启动新一轮采集。"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "xhs:comment:6a6bf28d0000000023003c92",
+      "platform": "xhs",
+      "body": "我要方形专辑页面！不要圆形不要会转！",
+      "published_at": "2026-07-31T00:55:42+00:00",
+      "source_url": "https://www.xiaohongshu.com/explore/6a6afbb6000000000f0339ef",
+      "parent_id": null,
+      "root_id": "6a6bf28d0000000023003c92",
+      "context_status": "returned_links_only",
+      "client": "unknown",
+      "version": "unknown"
+    },
+    {
+      "id": "xhs:comment:6a70d026000000001403bfbe",
+      "platform": "xhs",
+      "body": "神经了也是 人家为什么要去掉自己的特色啊",
+      "published_at": "2026-08-03T17:30:15+00:00",
+      "source_url": "https://www.xiaohongshu.com/explore/6a6afbb6000000000f0339ef",
+      "parent_id": "6a6bf28d0000000023003c92",
+      "root_id": "6a6bf28d0000000023003c92",
+      "context_status": "returned_links_only",
+      "client": "unknown",
+      "version": "unknown"
+    },
+    {
+      "id": "xhs:comment:6a71309f000000002203c714",
+      "platform": "xhs",
+      "body": "你阅读理解0分？谁说要去掉了？个性化定制懂吗？你有猫饼吗？那你改什么头像？小红书官方头像不香吗？为什么要去掉小红书的特色？",
+      "published_at": "2026-08-04T00:21:51+00:00",
+      "source_url": "https://www.xiaohongshu.com/explore/6a6afbb6000000000f0339ef",
+      "parent_id": "6a70d026000000001403bfbe",
+      "root_id": "6a6bf28d0000000023003c92",
+      "context_status": "returned_links_only",
+      "client": "unknown",
+      "version": "unknown"
+    },
+    {
+      "id": "xhs:comment:6a71313a000000002203c976",
+      "platform": "xhs",
+      "body": "哦更新后有了，不好意思",
+      "published_at": "2026-08-04T00:24:27+00:00",
+      "source_url": "https://www.xiaohongshu.com/explore/6a6afbb6000000000f0339ef",
+      "parent_id": "6a70bf5a000000001501294f",
+      "root_id": "6a6bf28d0000000023003c92",
+      "context_status": "returned_links_only",
+      "client": "unknown",
+      "version": "unknown"
+    }
+  ],
+  "issues": [
+    {
+      "id": "netease-player-shape-review-example",
+      "title": "网易云音乐可以保留圆形默认样式，同时验证可选方形样式能否满足不同偏好。",
+      "decision_object": "网易云音乐播放器的专辑封面形状选择",
+      "relation": "insufficient_context",
+      "interpretation": "如果讨论的是增加可选方形样式并保留默认圆形，偏好可能兼容；现有文字不足以断定双方在同一条件下提出互斥要求。",
+      "anchors": [
+        {
+          "evidence_id": "xhs:comment:6a6bf28d0000000023003c92",
+          "anchor": "我要方形专辑页面！不要圆形不要会转！"
+        },
+        {
+          "evidence_id": "xhs:comment:6a70d026000000001403bfbe",
+          "anchor": "人家为什么要去掉自己的特色啊"
+        },
+        {
+          "evidence_id": "xhs:comment:6a71309f000000002203c714",
+          "anchor": "谁说要去掉了？个性化定制懂吗？"
+        },
+        {
+          "evidence_id": "xhs:comment:6a71313a000000002203c976",
+          "anchor": "更新后有了"
+        }
+      ],
+      "conditions": [
+        "客户端、版本和付费条件尚未核验。",
+        "未复现实际界面，不能将文字分析视作界面验证。"
+      ],
+      "hypotheses": [
+        {
+          "statement": "双方可能把可选样式与全局替换混淆",
+          "support_ids": [
+            "xhs:comment:6a70d026000000001403bfbe",
+            "xhs:comment:6a71309f000000002203c714"
+          ],
+          "disconfirming_question": "保留默认圆形但允许选择方形时，反对者是否仍反对？",
+          "status": "unverified_hypothesis"
+        },
+        {
+          "statement": "差异可能来自客户端、版本或入口可发现性",
+          "support_ids": [
+            "xhs:comment:6a71313a000000002203c976"
+          ],
+          "disconfirming_question": "核对同一客户端、版本与账号条件后，方形是否已可选择且能被找到？",
+          "status": "unverified_hypothesis"
+        }
+      ],
+      "options": [
+        {
+          "action": "先核对现有功能；若已存在，比较现有样式入口的可发现性与说明方式",
+          "conditions": "同一客户端和版本已确认支持方形",
+          "tradeoff": "减少重复建设，但不能解决确实不支持的客户端",
+          "validation_task": "让用户独立将播放器切换为方形，记录是否找到入口、耗时及错误"
+        },
+        {
+          "action": "若目标客户端不支持，再比较保留圆形默认与提供样式选择的方案",
+          "conditions": "已确认缺少选择能力且存在相关用户任务",
+          "tradeoff": "增加个性化能力，同时可能增加设置、适配和维护负担；工程代价待核",
+          "validation_task": "比较两种原型的设置完成情况、样式辨识与误操作，检查是否损害原有用户任务"
+        }
+      ],
+      "ranking_reasons": [
+        "本例用于观察与补证，尚未完成优先级判断，不进入主收藏榜。"
+      ],
+      "related_feedback": null,
+      "main_collection_eligible": false
+    }
+  ],
+  "limitations": [
+    "这是既有实采文字示例，未包含网易云音乐的完整语料。",
+    "尚未经独立人工复核，也未核验当前安卓版本的适用性。",
+    "本例不表示已达到1000条筛后有效反馈的研究目标。"
+  ]
+}

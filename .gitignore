@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.setup/
+qa/
+validation/
+bundled-skills/
+release/
+*.zip
+.DS_Store

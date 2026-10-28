@@ -1,0 +1,9 @@
+python-pptx>=1.0.2
+XlsxWriter>=3.2.0
+Pillow>=10.0
+PyYAML>=6.0
+Flask>=3.1
+skia-pathops>=0.9.2
+uharfbuzz>=0.57
+fonttools>=4.68
+requests>=2.32

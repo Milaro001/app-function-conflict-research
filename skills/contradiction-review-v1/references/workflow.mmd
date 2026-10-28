@@ -1,0 +1,39 @@
+flowchart LR
+  N1["步骤 01 · N1<br/>接收需求并识别 App"]
+  N2("步骤 02 · N2<br/>应用规则并生成计划")
+  G1{"步骤 03 · G1<br/>冻结范围规则与变更"}
+  N3("步骤 04 · N3<br/>复用会话并采集证据")
+  N4("步骤 05 · N4<br/>去重入库并检查质量")
+  N5("步骤 06 · N5<br/>提取主张并判别冲突")
+  N6("步骤 07 · N6<br/>深挖原因并形成迭代建议")
+  N7("步骤 08 · N7<br/>生成网页并自动校验")
+  G2{"步骤 09 · G2<br/>裁定证据解释与结论边界"}
+  G3{"步骤 10 · G3<br/>选择迭代行动与使用方向"}
+  N8["步骤 11 · N8<br/>交付网页与证据包"]
+  N1 --> N2
+  N2 --> G1
+  G1 --> N3
+  N3 --> N4
+  N4 --> N5
+  N5 --> N6
+  N6 --> N7
+  N7 --> G2
+  G2 --> G3
+  G3 --> N8
+  N2 -->|"复用G1已确认且适用规则"| N3
+  N7 -->|"自动交付 未人工复核"| N8
+  N8 -.->|"用户选择网页复核"| G2
+  G1 -.->|"范围或变更未定"| N2
+  G2 -.->|"证据或上下文不足"| N3
+  G2 -.->|"编码或冲突解释错误"| N5
+  G2 -.->|"网页或校验错误"| N7
+  G3 -.->|"策略或验证任务需重做"| N6
+  classDef ai fill:#D9EEF2,stroke:#167D92,stroke-width:2px,color:#193247;
+  classDef human fill:#FFF0DB,stroke:#C87518,stroke-width:2px,color:#193247;
+  classDef io fill:#FFFFFF,stroke:#CED8E0,stroke-width:2px,color:#193247;
+  class N2,N3,N4,N5,N6,N7 ai;
+  class G1,G2,G3 human;
+  class N1,N8 io;
+  linkStyle 10,11 stroke:#167D92,stroke-width:2px;
+  linkStyle 12 stroke:#637789,stroke-width:2px,stroke-dasharray:7 5;
+  linkStyle 13,14,15,16,17 stroke:#C87518,stroke-width:2px,stroke-dasharray:7 5;

@@ -1,0 +1,76 @@
+{
+  "case_id": "netease-player-shape-review-example",
+  "example_kind": "real collected text; provisional interpretation; not a UI reproduction",
+  "app": "网易云音乐",
+  "decision_object": "播放器专辑封面样式是固定圆形、默认圆形还是允许用户选择方形",
+  "scope": {
+    "source_platform": "xhs",
+    "client": "unknown",
+    "version": "unknown",
+    "payment": "unknown",
+    "task": "按个人偏好设置播放器样式",
+    "ui_media_verified": false
+  },
+  "evidence": [
+    {
+      "evidence_id": "xhs:comment:6a6bf28d0000000023003c92",
+      "anchor": "我要方形专辑页面！不要圆形不要会转！",
+      "role": "样式与旋转偏好",
+      "source_url": "https://www.xiaohongshu.com/explore/6a6afbb6000000000f0339ef"
+    },
+    {
+      "evidence_id": "xhs:comment:6a70d026000000001403bfbe",
+      "anchor": "人家为什么要去掉自己的特色啊",
+      "role": "对移除品牌样式的异议；不能自动解释为反对可选方形",
+      "source_url": "https://www.xiaohongshu.com/explore/6a6afbb6000000000f0339ef"
+    },
+    {
+      "evidence_id": "xhs:comment:6a71309f000000002203c714",
+      "anchor": "谁说要去掉了？个性化定制懂吗？",
+      "role": "对要求范围的澄清",
+      "source_url": "https://www.xiaohongshu.com/explore/6a6afbb6000000000f0339ef"
+    },
+    {
+      "evidence_id": "xhs:comment:6a71313a000000002203c976",
+      "anchor": "更新后有了",
+      "role": "提示版本可能影响功能是否存在；未核定具体版本",
+      "source_url": "https://www.xiaohongshu.com/explore/6a6afbb6000000000f0339ef"
+    }
+  ],
+  "relation": "insufficient_context",
+  "provisional_interpretation": "如果讨论的是增加可选方形样式并保留默认圆形，偏好可能兼容；现有文字不足以断定双方在同一条件下提出互斥要求。",
+  "hypotheses": [
+    {
+      "statement": "双方可能把可选样式与全局替换混淆",
+      "support_ids": ["xhs:comment:6a70d026000000001403bfbe", "xhs:comment:6a71309f000000002203c714"],
+      "disconfirming_question": "保留默认圆形但允许选择方形时，反对者是否仍反对？",
+      "status": "unverified_hypothesis"
+    },
+    {
+      "statement": "差异可能来自客户端、版本或入口可发现性",
+      "support_ids": ["xhs:comment:6a71313a000000002203c976"],
+      "disconfirming_question": "核对同一客户端、版本与账号条件后，方形是否已可选择且能被找到？",
+      "status": "unverified_hypothesis"
+    }
+  ],
+  "options": [
+    {
+      "action": "先核对现有功能；若已存在，比较现有样式入口的可发现性与说明方式",
+      "conditions": "同一客户端和版本已确认支持方形",
+      "tradeoff": "减少重复建设，但不能解决确实不支持的客户端",
+      "validation_task": "让用户独立将播放器切换为方形，记录是否找到入口、耗时及错误"
+    },
+    {
+      "action": "若目标客户端不支持，再比较保留圆形默认与提供样式选择的方案",
+      "conditions": "已确认缺少选择能力且存在相关用户任务",
+      "tradeoff": "增加个性化能力，同时可能增加设置、适配和维护负担；工程代价待核",
+      "validation_task": "比较两种原型的设置完成情况、样式辨识与误操作，检查是否损害原有用户任务"
+    }
+  ],
+  "B_design_diagnosis": "pending_actual_interface_evidence",
+  "main_collection_eligible": false,
+  "main_collection_reason": "仅是一个讨论串的示例，不满足100条同议题合格反馈门槛；不声称代表多数用户。",
+  "human_gate_G2": "unreviewed",
+  "human_gate_G3": "unreviewed",
+  "experience_truth": "unverified"
+}
