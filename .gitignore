@@ -8,3 +8,5 @@ bundled-skills/
 release/
 *.zip
 .DS_Store
+
+!deliveries/v1.1.0/App-function-conflict-research_V1.1.0.zip

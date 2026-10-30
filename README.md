@@ -25,9 +25,9 @@
 
 ## 直接下载
 
-打开 [Releases](https://github.com/Milaro001/app-function-conflict-research/releases)，下载 `App-function-conflict-research_V1.1.0.zip`。交付包包含主 Skill、固定版本的三个 PPT Skill、安装器、运行说明及示例网页。
+下载 [V1.1.0 完整交付包](https://github.com/Milaro001/app-function-conflict-research/raw/refs/heads/main/deliveries/v1.1.0/App-function-conflict-research_V1.1.0.zip)，或查看 [V1.1版本目录](https://github.com/Milaro001/app-function-conflict-research/tree/main/deliveries/v1.1.0)。交付包包含主 Skill、固定版本的三个 PPT Skill、安装器、运行说明及示例网页。
 
-只下载 GitHub 自动生成的 Source code 压缩包时，三个 PPT Skill 会由安装器按固定版本从其官方仓库取得。完整交付 ZIP 已附带这些源码，无需再次下载 Skill 源码；Python 依赖和浏览器仍在目标电脑安装。
+只从仓库顶层源码安装时，三个 PPT Skill 会由安装器按固定版本从其官方仓库取得。完整交付 ZIP 已附带这些源码，无需再次下载 Skill 源码；Python 依赖和浏览器仍在目标电脑安装。
 
 ## 安装
 
