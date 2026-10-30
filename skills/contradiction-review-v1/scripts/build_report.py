@@ -16,7 +16,7 @@ from urllib.parse import urlparse
 
 SKILL=Path(__file__).resolve().parents[1]
 RELATIONS={'conflict_candidate','compatible_preferences','condition_difference','one_sided_issue','insufficient_context'}
-ROOT_FIELDS={'schema_version','report_id','app','scope','counts','sources','issues','evidence','limitations','generated_at','handoff','analytics'}
+ROOT_FIELDS={'schema_version','report_id','app','scope','counts','sources','issues','evidence','limitations','generated_at','handoff','analytics','presentation','professional_references'}
 
 
 STAGE_KEYS={'discover','onboard','track','notify','pickup','send','pay','service','after_sale','account','other'}
@@ -60,6 +60,7 @@ def validate_insight(issue,ids):
             if st.get('key') not in STAGE_KEYS:raise ValueError('invalid journey stage key')
             keys.append(st['key'])
             text(st.get('label'),8,'stage.label')
+            if st.get('feeling_label') is not None:text(st['feeling_label'],12,'stage.feeling_label')
             for k in ('user_action','touchpoint','backstage'):text(st.get(k),30,'stage.'+k)
             f=st.get('feeling')
             if f is not None and (type(f) is not int or not -2<=f<=2):raise ValueError('stage.feeling must be -2..2 or null')
@@ -72,6 +73,17 @@ def validate_insight(issue,ids):
                 eid=basis.get('evidence_id');anchor=basis.get('anchor')
                 if eid not in st.get('evidence_ids',[]) or not isinstance(anchor,str) or not anchor or anchor not in ids[eid]['body']:raise ValueError('feeling_basis must quote a stage source')
                 text(basis.get('interpretation'),150,'feeling_basis.interpretation')
+                if basis.get('match_type','direct') not in {'direct','semantic_similar'}:raise ValueError('invalid quote match_type')
+                if basis.get('match_type')=='semantic_similar':text(basis.get('match_reason'),150,'semantic quote match_reason')
+            elif f is not None:raise ValueError('a feeling point needs an exact feeling_basis quote')
+            matches=st.get('quote_matches',[])
+            if not isinstance(matches,list):raise ValueError('quote_matches must be a list')
+            for match in matches:
+                if not isinstance(match,dict) or match.get('evidence_id') not in st.get('evidence_ids',[]) or match.get('match_type') not in {'direct','semantic_similar'}:raise ValueError('invalid journey quote match')
+                if 'anchor' in match and (not isinstance(match['anchor'],str) or not match['anchor'] or match['anchor'] not in ids[match['evidence_id']]['body']):raise ValueError('quote match anchor must quote its source')
+                if match.get('match_type')=='semantic_similar':
+                    text(match.get('match_reason'),150,'semantic quote match_reason')
+                    if not match.get('anchor'):raise ValueError('semantic quote match needs an exact anchor')
         if journey.get('breakpoint') not in keys:raise ValueError('journey.breakpoint must be one of its stages')
     for c in x.get('root_cause',[]):
         if c.get('level') not in {'symptom','direct','underlying'} or c.get('status') not in {'observed','hypothesis'}:raise ValueError('invalid root_cause level/status')
@@ -142,6 +154,27 @@ def validate(data):
                 raise ValueError('source_url must be an HTTP(S) page without credentials')
         elif not item.get('source_file'):raise ValueError('evidence needs a source URL or file')
         ids[eid]=item
+    presentation=(data.get('analytics') or {}).get('presentation') or data.get('presentation') or {}
+    references=data.get('professional_references',[])
+    if not isinstance(references,list):raise ValueError('professional_references must be an array')
+    reference_ids={};reference_evidence=set()
+    for reference in references:
+        rid=reference.get('id');eid=reference.get('evidence_id');anchor=reference.get('anchor')
+        if not isinstance(rid,str) or not rid or rid in reference_ids:raise ValueError('professional reference ID must be unique')
+        if eid not in ids or not isinstance(anchor,str) or not anchor or anchor not in ids[eid]['body']:raise ValueError('professional reference needs an exact source excerpt')
+        if ids[eid].get('kind')!='post' or ids[eid].get('material_role')!='professional_reference':raise ValueError('professional references must be separate post materials')
+        if reference.get('counts_as_user_feedback') is not False:raise ValueError('professional article cannot count as user feedback')
+        if reference.get('app_relation') not in ('same_app','same_task','cross_product','method_only'):raise ValueError('professional reference needs applicability')
+        for key in ('title','site','viewpoint','quality_reason','limitations'):
+            if not isinstance(reference.get(key),str) or not reference[key].strip():raise ValueError('professional reference needs '+key)
+        reference_ids[rid]=reference;reference_evidence.add(eid)
+    if any(r.get('evidence_id') in reference_evidence for r in (data.get('analytics') or {}).get('records',[])):
+        raise ValueError('professional article cannot enter comment analytics')
+    hero=presentation.get('hero') or {}
+    if data['issues'] or hero:
+        from frameworks import validate_hero_image,validate_hero_gallery
+        validate_hero_image(hero.get('image'),required=bool(data['issues']))
+        validate_hero_gallery(hero)
     seen=set();anchors=0;insights=0
     for issue in data['issues']:
         if not isinstance(issue,dict):raise ValueError('invalid issue')
@@ -165,6 +198,17 @@ def validate(data):
         for option in issue.get('options',[]):
             if any(not isinstance(option.get(k),str) or not option[k] for k in ('action','conditions','tradeoff','validation_task')):
                 raise ValueError('option needs action, conditions, tradeoff and validation_task')
+            links=option.get('reference_links',[])
+            if not isinstance(links,list):raise ValueError('option reference_links must be an array')
+            for link in links:
+                if link.get('reference_id') not in reference_ids:raise ValueError('option refers to an unknown professional reference')
+                users=link.get('user_evidence_ids')
+                if not isinstance(users,list) or not users or any(e not in ids or e in reference_evidence or ids[e].get('kind')=='post' for e in users):
+                    raise ValueError('reference adaptation needs actual user feedback evidence')
+                stat=next((s for s in (data.get('analytics') or {}).get('issue_stats',[]) if s.get('issue_id')==iid),None)
+                if stat and any(e not in stat['record_ids'] for e in users):raise ValueError('reference users must belong to the current issue')
+                for key in ('takeaway','adaptation','boundary'):
+                    if not isinstance(link.get(key),str) or not link[key].strip():raise ValueError('reference adaptation needs '+key)
         related=issue.get('related_feedback')
         if related is not None and (type(related) is not int or related<0):raise ValueError('invalid related feedback count')
         if issue.get('main_collection_eligible') and (related is None or related<100 or issue['relation']=='insufficient_context'):
@@ -186,6 +230,22 @@ def validate(data):
                 missing=[k for k in ('effort','impact_level','estimate_basis','wireframe') if not option.get(k) or option.get(k)=='待核']
                 if missing:gaps.append({'issue_id':issue['id'],'option_index':index,'missing':missing,'note':'补齐有依据的研究估计和改前改后示意；关键前提确实未知时明确保留原因。'})
         if gaps:result['presentation_gaps']=gaps
+    coverage=[]
+    for issue in data['issues']:
+        for st in (issue.get('insight',{}).get('journey') or {}).get('stages',[]):
+            matches={m['evidence_id']:m for m in st.get('quote_matches',[])}
+            if st.get('feeling_basis'):
+                basis=st['feeling_basis'];matches.setdefault(basis['evidence_id'],basis)
+            refs=st.get('evidence_ids',[])
+            coverage.append(dict(issue_id=issue['id'],stage=st['key'],label=st['label'],
+                evidence_ids=refs,quoted_sources=len(refs),
+                semantic_similar=sum(matches.get(e,{}).get('match_type')=='semantic_similar' for e in refs),
+                explicit_anchor_sources=sum(bool(matches.get(e,{}).get('anchor')) for e in refs),
+                quote_gap_reason=st.get('quote_gap_reason') if not refs else None,
+                status='sourced' if refs else 'gap_recorded' if st.get('quote_gap_reason') else 'needs_review'))
+    if coverage:
+        result['journey_quote_coverage']={'stages':len(coverage),'with_sources':sum(bool(r['evidence_ids']) for r in coverage),
+            'missing_review':sum(r['status']=='needs_review' for r in coverage),'rows':coverage}
     if data.get('analytics') is not None:
         from quantification import validate_analytics
         result['quantification']=validate_analytics(data['analytics'],data)
@@ -205,7 +265,7 @@ def render(data):
     safe=json.dumps(payload,ensure_ascii=False).replace('&','\\u0026').replace('<','\\u003c').replace('>','\\u003e').replace('\u2028','\\u2028').replace('\u2029','\\u2029')
     template=(SKILL/'assets/report-template.html').read_text(encoding='utf-8')
     if template.count('__REPORT_JSON__')!=1:raise ValueError('report template placeholder mismatch')
-    analytics=(SKILL/'assets/report-analytics.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-diagrams.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-insight.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-frameworks.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-motion.js').read_text(encoding='utf-8')
+    analytics=(SKILL/'assets/report-analytics.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-diagrams.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-insight.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-frameworks.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-motion.js').read_text(encoding='utf-8')+'\n'+(SKILL/'assets/report-issue-motion.js').read_text(encoding='utf-8')
     template=template.replace('__HANDOFF_SCRIPT__',(SKILL/'assets/report-handoff.js').read_text(encoding='utf-8')).replace('__ANALYTICS_SCRIPT__',analytics).replace('__REPORT_CSS__',(SKILL/'assets/report.css').read_text(encoding='utf-8'))
     return template.replace('__REPORT_JSON__',safe),checks,bundle_id
 
@@ -225,6 +285,8 @@ def build(data,destination):
                 if isinstance(value,str) and value.startswith(('=','+','-','@')):row[key]="'"+value
             writer.writerow(row)
     receipt={'built_at':datetime.now(timezone.utc).isoformat(),'bundle_id':bundle_id,
+        'effective_sample':{'minimum':1000,'preferred':2000,'qualified':data['counts'].get('qualified_in_scope'),'status':'preferred_met' if (data['counts'].get('qualified_in_scope') or 0)>=2000 else 'minimum_met' if (data['counts'].get('qualified_in_scope') or 0)>=1000 else 'incomplete_effective_sample'},
+        'raw_collection':__import__('sampling_plan').raw_collection_plan(data['counts'].get('raw_comments')),
         'structural_checks':checks,'human_G2':'unreviewed','human_G3':'unreviewed',
         'limits':['Structure and exact quotation validation only; semantic correctness and quantity are separate.',
                   'Local review choices are exported separately; they do not modify source evidence or grant publication approval.']}
@@ -238,7 +300,12 @@ def build(data,destination):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('input',type=Path);parser.add_argument('--output',type=Path,required=True)
-    args=parser.parse_args();manifest=build(json.loads(args.input.read_text(encoding='utf-8')),args.output)
+    parser.add_argument('--thread-id',help='verified existing source chat UUID; binds direct-send controls')
+    args=parser.parse_args();data=json.loads(args.input.read_text(encoding='utf-8'))
+    if args.thread_id:
+        if not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}',args.thread_id):parser.error('thread-id must be the verified source chat UUID')
+        data['handoff']={'conversation_url':'codex://threads/'+args.thread_id,'local_bridge':True}
+    manifest=build(data,args.output)
     print(json.dumps({'report':str((args.output/'report.html').resolve()),'bundle_id':manifest['bundle_id'],'human_review_status':'unreviewed'},ensure_ascii=False))
 
 

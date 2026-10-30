@@ -11,7 +11,7 @@ function revealSection(node){node.classList.add('scroll-reveal');revealObserver.
 function scrollToResearch(node){if(reportMotion){reportMotion.goToNode(node);return}node.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
 function outsideLink(parent,label,url,cls=''){const a=add(parent,'a',label,cls);a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a}
 function drawReportCover(root){
- const p=qa?.presentation||{},h=p.hero||{},cover=add(root,'section',undefined,'report-cover');cover.setAttribute('aria-label','调研报告封面');
+ const p=qa?.presentation||report.presentation||{},h=p.hero||{},cover=add(root,'section',undefined,'report-cover');cover.setAttribute('aria-label','调研报告封面');
  const stage=add(cover,'div',undefined,'cover-stage'),inner=add(stage,'div',undefined,'cover-inner');
  const columns=add(inner,'div',undefined,'cover-columns'),copy=add(columns,'div',undefined,'cover-copy');add(copy,'p','用户反馈 · 功能冲突分析 · 迭代研究','cover-kicker');
  add(copy,'h2',h.title||report.app+'功能迭代调研');add(copy,'p',h.subtitle||'从用户意见，走向可验证的改法','cover-subtitle');add(copy,'p',h.description||'整理可追溯的反馈，比较具体改法与下一步验证任务。','cover-description');
@@ -19,8 +19,14 @@ function drawReportCover(root){
  if(qa?.scope){const fmt=v=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v));add(metadata,'span','反馈窗口：'+fmt(qa.scope.start)+' — '+fmt(qa.scope.end))}
  add(metadata,'span','分析状态：AI初审 · 未人工复核');
  const jump=add(copy,'div',undefined,'cover-jumps');for(const [label,id]of [['研究数据','research-charts'],['服务质量视角','service-framework'],['方案优先级','rice-framework']]){if(id!=='research-charts'&&!qa?.frameworks)continue;const b=add(jump,'button',label);b.onclick=()=>{const target=document.getElementById(id);if(target)scrollToResearch(target)}}
- if(h.image){const photo=add(columns,'figure',undefined,'cover-photo');const img=add(photo,'img');img.src=h.image.data;img.alt=h.image.alt;img.width=960;img.height=540;img.decoding='async';const caption=add(photo,'figcaption');add(caption,'span',h.image.caption);const credit=add(caption,'small');outsideLink(credit,h.image.author,h.image.source_url);credit.append(document.createTextNode(' · '));outsideLink(credit,h.image.license,h.image.license_url);credit.title=h.image.display_note||''}
- else{const visual=add(columns,'figure',undefined,'cover-photo cover-product-visual');visual.setAttribute('role','img');visual.setAttribute('aria-label',report.app+'的产品研究示意（非实测界面）');const art=add(visual,'div',undefined,'cover-illustration');const device=add(art,'div',undefined,'cover-device');add(device,'span','', 'cover-device-notch');add(device,'strong',Array.from(report.app).slice(0,2).join(''));add(device,'span','用户反馈研究');const cards=add(art,'div',undefined,'cover-illustration-cards');for(const text of ['收集真实反馈','比较功能诉求','形成验证方案']){const card=add(cards,'div');add(card,'i');add(card,'span',text)}add(visual,'figcaption',report.app+' · 产品研究示意（非实测界面）')}
+ if(h.image){
+  const images=h.images?.length?h.images:[h.image],photo=add(columns,'figure',undefined,'cover-photo cover-product-visual');photo.dataset.imageKind=h.image.kind;
+  const gallery=images.length>1?add(photo,'div',undefined,'cover-gallery-images'):photo;
+  if(images.length>1){photo.classList.add('cover-gallery');gallery.style.setProperty('--cover-image-count',images.length);gallery.setAttribute('role','group');gallery.setAttribute('aria-label',report.app+'产品展示图，左右并排')}
+  for(const source of images){const img=add(gallery,'img');img.src=source.data;img.alt=source.alt;img.width=source.width||(images.length>1?1080:960);img.height=source.height||(images.length>1?1920:540);if(images.length>1)img.style.aspectRatio='auto';img.decoding='async'}
+  const caption=add(photo,'figcaption');add(caption,'span',h.gallery_caption||h.image.caption);const credit=add(caption,'small'),credited=new Set();for(const source of images){const key=source.source_url+'|'+source.author;if(credited.has(key))continue;if(credited.size)credit.append(document.createTextNode(' · '));outsideLink(credit,source.author,source.source_url);if(source.license&&source.license_url){credit.append(document.createTextNode(' · '));outsideLink(credit,source.license,source.license_url)}credited.add(key)}credit.title=images.map(source=>source.usage_note||'').filter(Boolean).join('；');
+ }
+ else{const gap=add(columns,'figure',undefined,'cover-photo cover-capture-gap');add(gap,'p','待补充真实产品截图');add(gap,'figcaption','真实截图未取得，当前仅为未完成预览。')}
  const metrics=document.getElementById('metrics');inner.append(metrics);metrics.classList.add('cover-metrics');
  const cue=add(stage,'button',undefined,'cover-scroll-cue');cue.setAttribute('aria-label','向下查看研究总览');const circle=add(cue,'span',undefined,'scroll-cue-circle');circle.setAttribute('aria-hidden','true');add(circle,'i');add(cue,'span','向下查看研究总览');
  const intro=add(cover,'section',undefined,'cover-research-intro');intro.id='research-data';revealSection(intro);cue.onclick=()=>scrollToResearch(document.getElementById('research-charts')||intro);

@@ -162,6 +162,7 @@ def validate_analytics(a,report):
             if f.get('evidence_id') not in evidence or not f.get('anchor') or f['anchor'] not in evidence[f['evidence_id']]['body']:raise ValueError('profile fact is not an exact source quote')
     stance_count=0
     stances=a.get('issue_stances')
+    if issue_ids and stances is None:raise ValueError('issue_stances is required for every issue; do not deliver unclassified stance charts')
     if stances is not None:
         if not isinstance(stances,dict) or set(stances)!=issue_ids:raise ValueError('stance review must cover each issue')
         stats={s['issue_id']:s for s in a.get('issue_stats',[])}

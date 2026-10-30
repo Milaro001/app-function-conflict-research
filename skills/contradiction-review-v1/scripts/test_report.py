@@ -7,7 +7,11 @@ from pathlib import Path
 import build_report as m
 
 
-def example():return json.loads((m.SKILL/'assets/report.example.json').read_text(encoding='utf-8'))
+def example():
+    data=json.loads((m.SKILL/'assets/report.example.json').read_text(encoding='utf-8'))
+    from test_evidence_rules import screenshot_fixture
+    data['presentation']={'hero':{'image':screenshot_fixture()}}
+    return data
 
 
 class ReportIntegrity(unittest.TestCase):

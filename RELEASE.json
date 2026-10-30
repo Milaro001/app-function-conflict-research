@@ -1,0 +1,11 @@
+{
+  "version": "1.1.0",
+  "display_name": "App 功能冲突调研分析 V1.1版本",
+  "release_date": "2026-10-30",
+  "core_skill": "contradiction-review-v1",
+  "local_legacy_skill_id": "contradiction-review-v0-4",
+  "archive_name": "App-function-conflict-research_V1.1.0.zip",
+  "runtime_and_login_data_included": false,
+  "bundled_presentation_skills": ["ppt-master", "consulting-deck-expert", "presentation-qa"],
+  "source_archive_note": "The complete release ZIP includes pinned presentation skill sources; GitHub source archives install these from pinned upstream commits."
+}

@@ -24,7 +24,7 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parents[1]
 SCRIPTS = SKILL / 'scripts'
 SOCIAL = ('xhs', 'wb', 'bili', 'zhihu', 'douyin')
-NAMES = {'appbao': '应用宝', 'appstore': 'App Store', 'xhs': '小红书', 'wb': '微博', 'bili': 'B站', 'zhihu': '知乎', 'douyin': '抖音'}
+NAMES = {'appbao': '应用宝', 'appstore': 'App Store', 'xhs': '小红书', 'wb': '微博', 'bili': 'B站', 'zhihu': '知乎', 'douyin': '抖音','professional':'专业社区文章候选（不计评论）'}
 
 
 def cfg():
@@ -53,18 +53,24 @@ def main():
     p.add_argument('--competitor', action='append', default=[])
     p.add_argument('--platforms', nargs='*', default=['appbao', 'appstore', 'xhs', 'wb', 'bili', 'zhihu'],
                    choices=['appbao', 'appstore', *SOCIAL])
-    p.add_argument('--since', help='ISO date; default 12 months before now')
+    p.add_argument('--since', help='explicit ISO date; otherwise use --years calendar window')
+    p.add_argument('--years', type=int, choices=(1,2,3,4), default=1, help='review each batch; expand 1→2→3→4 years only when needed')
     p.add_argument('--posts', type=int, default=30, help='posts per social platform (auto-selected, newest first)')
     p.add_argument('--per-post', type=int, default=80, help='comment+reply cap per post')
     p.add_argument('--reply-min', type=int, default=2, help='page reply threads only when they declare at least N replies')
     p.add_argument('--keywords', type=int, default=8, help='search phrases per platform (4..12)')
     p.add_argument('--pages', type=int, default=2, help='search pages per phrase')
+    p.add_argument('--skip-professional', action='store_true', help='only for explicit source-only resumes; record why in research scope')
+    p.add_argument('--professional-sites', nargs='+', default=['woshipm','uisdc','ui_cn','zcool'], choices=['woshipm','uisdc','ui_cn','zcool'])
+    p.add_argument('--professional-candidates', type=int, default=8, help='bounded body fetches per site; no article quota')
     a = p.parse_args()
     started = time.monotonic();c = cfg()
     py = Path(c['python'])
     if not py.is_file():
         print(json.dumps({'error': 'environment_not_ready', 'fix': 'python scripts/setup.py'}, ensure_ascii=False));return 1
-    since = a.since or (datetime.now(timezone.utc) - timedelta(days=365)).date().isoformat()
+    from sampling_plan import years_before,raw_collection_plan
+    window_end=datetime.now(timezone(timedelta(hours=8))).isoformat()
+    since = a.since or years_before(window_end,a.years)[:10]
     out = Path(c['output']);stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     logs = out / 'collect-all' / stamp;logs.mkdir(parents=True, exist_ok=True)
     plan = logs / 'keywords.json'
@@ -75,6 +81,13 @@ def main():
 
     skipped = {}
     jobs = []
+    if not a.skip_professional:
+        professional_cmd=[py,SCRIPTS/'professional_sources.py','collect','--app',a.app,'--sites',*a.professional_sites,
+                          '--candidate-limit',str(a.professional_candidates)]
+        for f in a.feature:professional_cmd+=['--feature',f]
+        for comp in a.competitor:professional_cmd+=['--competitor',comp]
+        jobs.append(launch('professional',professional_cmd,logs))
+    else:skipped['professional']='explicit --skip-professional source-only resume; coverage remains separately auditable'
     if 'appbao' in a.platforms:
         jobs.append(launch('appbao', [py, SCRIPTS / 'appbao.py', 'collect', '--app', a.app, '--since', since], logs))
     if 'appstore' in a.platforms:
@@ -113,20 +126,29 @@ def main():
         status = data.get('status') or ('collected' if r['exit'] == 0 and data else 'failed')
         count = data.get('comments') or data.get('records') or (data.get('counts') or {}).get('unique_comment_ids')
         posts = (data.get('counts') or {}).get('posts')
+        if name=='professional':count=0;posts=data.get('bodies_obtained',0)
         if status in ('needs_interactive_login', 'unauthenticated', 'needs_user_auth', 'auth_state_unconfirmed', 'unknown_response',
                       'verification_required', 'needs_interactive_verification'):
             needs_login.append(name)
         rows.append(dict(source=name, status=status, posts=posts, comments=count, seconds=r['seconds'], log=str(logs / f'{name}.log')))
-    summary = dict(app=a.app, since=since, started_at=stamp, total_seconds=round(time.monotonic() - started), sources=rows,
+    summary = dict(app=a.app, since=since, collection_window_years=a.years, effective_target_minimum=1000, effective_target_preferred=2000, raw_collection=raw_collection_plan(), semantic_review_pending=True, next_step='label, validate scope, then run sampling_plan.py; raw comments are not completion', started_at=stamp, total_seconds=round(time.monotonic() - started), sources=rows,
                    skipped=skipped, needs_login=needs_login,
                    login_commands={n: f'{py} {SCRIPTS / "collect.py"} auth --platform {n} --interactive --wait 900' for n in needs_login},
-                   corpus=corpus, keywords=str(plan))
+                   corpus=corpus, keywords=str(plan),professional_reference_policy=dict(article_target=None,counts_as_user_feedback=False,quality_review_required=True))
     (logs / 'collection-summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     lines = [f'# {a.app} 采集汇总', '', f'时间窗：{since} 至今　总用时：{summary["total_seconds"]} 秒（各来源并行）', '',
              '| 来源 | 状态 | 帖子 | 评论/评价 | 用时(秒) |', '|---|---|---:|---:|---:|']
     for r in rows:lines.append(f"| {NAMES.get(r['source'], r['source'])} | {r['status']} | {r['posts'] or ''} | {r['comments'] or 0} | {r['seconds']} |")
     for n, why in skipped.items():lines.append(f'| {NAMES.get(n, n)} | 跳过 |  |  |  |')
     lines += ['', f"合并后语料：{corpus.get('records', 0)} 条记录，可用评论正文 {corpus.get('usable_comment_bodies', 0)} 条，尚未语义筛选。"]
+    lines += ['', '原始评论以约2,000条安排预算，参考1,500—2,500条；这是一批的规划范围，不是截断上限。完成可用页/回复链/批次后保留实际数量，合并按ID复算。筛后严格有效量不足1,000时按计划补采或核实条件，不把原始量当作达标。']
+    if 'professional' in results:
+        pro=results['professional']['result'] or {}
+        lines+=['','## 专业社区参考（独立于用户反馈）',
+                '首轮已发起人人都是产品经理、优设、UI中国与站酷公开检索；正文候选不是已选优质文章。',
+                f'原始运行：{pro.get("output","见 professional.log")}；取得正文 {pro.get("bodies_obtained",0)} 篇；无文章数量门槛。',
+                '先读 manifest/plan，受限来源按 host_search_queries 用主机搜索补检并取原页；逐篇阅读后通过 professional_sources.py review 保留相关、有依据、有边界的文章。',
+                '选中文章在 corpus/professional-references.json 单列，供议题原因和方案逐项对照，永不填入1000条有效用户反馈。']
     if needs_login:
         lines += ['', '## 需要用户操作的平台（登录或验证码）', '',
                   '请让用户在方便时运行下列命令，在弹出的专用静音窗口完成登录或滑块验证，之后可后台复用；不要自动重试，以免限制加重：', '']

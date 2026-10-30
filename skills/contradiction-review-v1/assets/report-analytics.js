@@ -100,7 +100,7 @@ function splitStances(i,s){
 }
 function issueComposition(parent){
  const all=report.issues.map(i=>{const s=issueStats.get(i.id);return {i,s,parts:splitStances(i,s)}});
- const annotated=all.some(x=>x.parts),keys=stanceStyles.filter(([key])=>['positive','negative'].includes(key)||all.some(x=>x.parts?.[key].value));
+ const annotated=all.some(x=>x.parts),keys=stanceStyles;
  chartLegend(parent,annotated?keys.map(([,label,color])=>[label,color]):[['尚未标注立场','var(--chart-blue)']]);
  const upper=niceMax(Math.max(1,...all.map(x=>x.s?.semantic_groups||0)));
  const plot=add(parent,'div',undefined,'bar-chart issue-composition');plot.setAttribute('aria-label','议题的正向与负向立场分布');plot.style.setProperty('--issue-rows',Math.max(1,all.length));
@@ -124,7 +124,7 @@ function issueComposition(parent){
 function monthKey(value){const d=new Date(value);if(!value||Number.isNaN(d.getTime()))return null;const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit'}).formatToParts(d);return parts.find(x=>x.type==='year').value+'-'+parts.find(x=>x.type==='month').value}
 function monthlyRows(rows,start,end){
  const buckets=new Map(),lo=new Date(start),hi=new Date(end),first=monthKey(start),last=monthKey(end);if(!first||!last)return [];
- let [y,m]=first.split('-').map(Number);for(let n=0;n<36;n++){const k=`${y}-${String(m).padStart(2,'0')}`;buckets.set(k,{month:k,P:0,V:0,mixed:0,record_ids:[]});if(k===last)break;if(++m===13){m=1;y++}}
+ let [y,m]=first.split('-').map(Number);const [ey,em]=last.split('-').map(Number),months=(ey-y)*12+em-m+1;for(let n=0;n<Math.min(months,600);n++){const k=`${y}-${String(m).padStart(2,'0')}`;buckets.set(k,{month:k,P:0,V:0,mixed:0,record_ids:[]});if(k===last)break;if(++m===13){m=1;y++}}
  for(const rs of groupedRows(rows.filter(r=>r.semantic_candidate)).values()){
   const dated=rs.filter(r=>r.published_at&&new Date(r.published_at)<=hi&&new Date(r.published_at)>=lo);if(!dated.length)continue;
   const latest=dated.reduce((a,b)=>new Date(a.published_at)>new Date(b.published_at)?a:b),bucket=buckets.get(monthKey(latest.published_at));if(!bucket)continue;
@@ -136,7 +136,7 @@ function monthChart(parent,rows,{start,end,total,unit='组',posts=false}={}){
  const data=posts?rows:monthlyRows(rows,start,end);const upper=niceMax(Math.max(1,...data.map(r=>r.value)));
  const frame=add(parent,'div',undefined,'monthly-chart bar-chart');frame.dataset.total=total;frame.setAttribute('aria-label',posts?'关联帖月份分布':'相关反馈月份分布');
  const axis=add(frame,'div',undefined,'month-y');for(const n of [1,.8,.6,.4,.2,0])add(axis,'span',String(Number((upper*n).toFixed(2))));
- const plot=add(frame,'div',undefined,'month-plot');plot.style.setProperty('--months',data.length||1);
+ const plot=add(frame,'div',undefined,'month-plot');plot.style.setProperty('--months',data.length||1);if(data.length>18){frame.classList.add('is-long-window');plot.style.minWidth=(data.length*38)+'px'}
  for(const r of data){const b=add(plot,'button',undefined,'month-column');b.dataset.month=r.month;b.dataset.value=r.value;b.setAttribute('aria-label',`${r.month}：${r.value}${unit}，${r.record_ids.length?'查看原文':'无已采材料'}`);
   const area=add(b,'span',undefined,'month-area'),stack=add(area,'span',undefined,'month-stack chart-grow-y');stack.style.setProperty('--stagger',plot.querySelectorAll('.month-column').length*35+'ms');stack.style.height=r.value/upper*100+'%';
   const fill=add(stack,'span');fill.style.height='100%';fill.style.background='var(--chart-blue)';
@@ -164,7 +164,7 @@ function drawOverview(root){
  stageFlow(intro);
  const grid=add(dataArea,'div',undefined,'chart-grid overview-charts');
  const a=chartCard(grid,'功能议题 × 正负立场',`单位：去同文候选组 · 全局候选${m.semantic_groups}组`);issueComposition(a);
- const b=chartCard(grid,'近一年相关反馈的月份分布',`单位：去重后的反馈条数 · 时间窗内${m.window_groups}条`);monthChart(b,qa.records,{start:qa.scope.start,end:qa.scope.end,total:m.window_groups});
+ const b=chartCard(grid,'所选时间窗内反馈的月份分布',`单位：去重后的反馈条数 · 时间窗内${m.window_groups}条`);monthChart(b,qa.records,{start:qa.scope.start,end:qa.scope.end,total:m.window_groups});
  const c=chartCard(grid,'信源平台分布',`单位：评论ID · 分母${m.raw_comment_ids}条`);c.classList.add('source-overview');barChart(c,qa.source_counts.map(r=>({...r,label:sourceNames[r.platform]||r.platform})),{unit:'条',denominator:m.raw_comment_ids,definition:'按来源与评论ID计数，尚未按同文去重；不代表各平台用户占比。'});add(c,'p','悬停查看数量和占比；点击条形可查原文。','chart-footnote');
  for(const card of grid.children)revealSection(card);
  const foot=add(intro,'div',undefined,'time-summary');for(const r of qa.time_counts){const b=add(foot,'button',undefined,'time-chip');add(b,'strong',r.value);add(b,'span',r.label);chartHover(b,r.label,[{label:'数量',value:r.value+' 组'},{label:'全部候选',value:m.semantic_groups+' 组'},{label:'占比',value:percent(r.value,m.semantic_groups)}]);if(r.record_ids.length)b.onclick=()=>inspectRecords(r.record_ids,r.label+' · '+r.value+'组',qa.definitions.time)}

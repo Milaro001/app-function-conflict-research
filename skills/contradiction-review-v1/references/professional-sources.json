@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "selection": {"article_target": null, "minimum_per_site": null, "policy": "relevance_and_quality_before_quantity", "counts_as_user_feedback": false},
+  "sources": [
+    {"id": "woshipm", "name": "人人都是产品经理", "domain": "woshipm.com", "focus": "产品拆解、需求取舍、竞品与业务机制", "search_url": "https://www.woshipm.com/?s={query}", "article_pattern": "^/[a-zA-Z_-]+/[0-9]+\\.html$"},
+    {"id": "uisdc", "name": "优设", "domain": "uisdc.com", "focus": "交互流程、信息架构、可用性与改版案例", "search_url": "https://www.uisdc.com/?s={query}", "article_pattern": "^/(?:hunter/[0-9]+\\.html|(?!search|about|login|tag/|category/)[^/?#]+/?)$"},
+    {"id": "ui_cn", "name": "UI中国", "domain": "ui.cn", "focus": "交互与界面设计过程、项目复盘", "search_url": "https://s.ui.cn/index.html?keywords={query}", "article_pattern": "^/detail/[0-9]+\\.html$"},
+    {"id": "zcool", "name": "站酷", "domain": "zcool.com.cn", "focus": "有过程说明的改版与设计案例", "search_url": "https://www.zcool.com.cn/search/content?word={query}", "article_pattern": "^/(work|article)/[^/]+(?:\\.html)?$"}
+  ]
+}

@@ -206,7 +206,7 @@ button:disabled{scale:1}button:not(:disabled):focus-visible{outline:2px solid va
 .ins-stage-head small{color:var(--muted);font-size:13px}
 .ins-stage-index{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);font-size:12px;color:var(--muted)}
 .ins-stage-head.is-break .ins-stage-index{border-color:var(--ins-break);color:var(--ins-break)}
-.ins-curve-holder{grid-column:1/-1;height:150px;position:relative}
+.ins-curve-holder{grid-column:1/-1;min-height:150px;height:auto;position:relative}
 .ins-curve{display:block}
 .ins-curve-grid{stroke:var(--diagram-grid);stroke-width:1}
 .ins-curve-grid.is-zero{stroke-dasharray:4 5}
@@ -411,3 +411,92 @@ button.ins-bench-status{padding:3px 9px;border-radius:999px;color:var(--ink)}
  .overview-data-area[data-density=compact] .composition-row{grid-template-columns:120px minmax(30px,1fr) 25px;min-height:45px}.overview-data-area[data-density=compact] .composition-label{font-size:13px}
  .overview-data-area[data-density=compact] .issue-composition .bar-axis{margin-left:128px;margin-right:33px}.cover-illustration{min-height:215px;aspect-ratio:1.7;padding:25px;gap:25px}.cover-device{width:112px;min-height:170px;border-width:5px}.cover-device strong{font-size:29px}.cover-illustration-cards{gap:12px}.cover-illustration-cards>div{padding:9px;font-size:12px}
 }
+
+/* Evidence-bound screenshots and continuous, qualified journey curves. */
+.cover-capture-gap{display:grid;place-content:center;min-height:280px;background:var(--panel);color:var(--muted)}
+.ins-quote-reason{display:block;font-size:13px;line-height:1.65;color:var(--muted);margin-top:3px}.ins-quote-match{display:block;font-size:13px;color:var(--chart-blue);margin-top:6px}.ins-curve-key{margin:4px 12px 12px;font-size:12px;color:var(--muted)}
+.ins-curve-bridge{stroke-dasharray:5 5;opacity:.7}.ins-curve-dot.is-semantic{fill:var(--panel);stroke:var(--chart-blue);stroke-width:3}
+.monthly-chart.is-long-window{overflow-x:auto}.monthly-chart.is-long-window .month-y{position:sticky;left:0;z-index:1;background:var(--panel)}
+
+.cover-photo[data-image-kind] img{object-fit:contain;background:#f4f6fb}
+.cover-photo[data-image-kind="report_screenshot"] img,.cover-photo[data-image-kind="user_screenshot"] img{aspect-ratio:auto;height:auto;max-height:420px;background:#123e84}
+
+/* Retained presentation choices: real portrait gallery and compact evidence label. */
+.cover-photo.cover-gallery .cover-gallery-images{display:grid;grid-template-columns:repeat(var(--cover-image-count,2),minmax(0,1fr));gap:6px;align-items:start;background:#dce9fa}
+.cover-photo.cover-gallery .cover-gallery-images img{display:block;width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain;background:transparent}
+.ins-quote .ins-quote-match{display:inline-flex;justify-self:start;width:max-content;align-items:center;padding:2px 7px;border:1px solid var(--line);border-radius:5px;font-size:12px;line-height:1.5;color:var(--chart-blue);margin:6px 0 1px}
+
+/* Only three outer resting positions; the original scene and cover effects stay intact. */
+#overview-view.three-stop-overview{overflow:hidden;overflow-anchor:none;scroll-behavior:auto;overscroll-behavior:none;touch-action:pan-x pinch-zoom}
+.overview-stop{height:var(--chapter-viewport);position:relative;overflow:hidden;overflow-anchor:none}
+.three-stop-overview .report-chapter{height:var(--chapter-viewport);min-height:0;max-height:var(--chapter-viewport);margin-top:0;margin-bottom:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+@media(min-width:761px){
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact]{padding:18px 28px 58px}
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact]>.chapter-visual{height:100%;min-height:0;display:flex;flex-direction:column}
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact] .overview-charts{flex:1;min-height:0;grid-template-rows:minmax(min-content,.48fr) minmax(min-content,.52fr)}
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact] .monthly-chart{min-height:100px}
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact] .chart-card{padding:9px 12px}
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact] .compact-bars .bar-row{min-height:22px;padding:2px 0}
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact] .compact-bars{grid-template-rows:max-content repeat(var(--bar-rows,1),minmax(22px,1fr))}
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact] .compact-bars .bar-track{height:14px}
+ .three-stop-overview[data-page-fit="compact"] .overview-data-area[data-density=compact] .chart-footnote{font-size:12px;line-height:1.45}
+ .three-stop-overview[data-page-fit="compact"] .research-boundary{padding:24px 28px 64px}
+ .three-stop-overview[data-page-fit="compact"] .research-boundary h2{font-size:26px;line-height:1.4;margin-bottom:14px}
+ .three-stop-overview[data-page-fit="compact"] .research-boundary .definitions{font-size:16px;line-height:1.75}
+ .three-stop-overview[data-page-fit="compact"] .research-boundary .definitions p{padding:9px 0}
+ .three-stop-overview[data-page-fit="compact"] .research-boundary .overview-prelude{margin-bottom:16px}
+}
+@media print{#overview-view.three-stop-overview,.overview-stop,.three-stop-overview .report-chapter{height:auto;max-height:none;overflow:visible}}
+
+/* Replay a short entrance when opening the issue workspace, then release all layers. */
+#issues-view.issues-enter #issues .issue.issue-entry-card{animation:issues-card-in 420ms cubic-bezier(.22,.7,.2,1) var(--issue-enter-delay,0ms) both;will-change:opacity,transform}
+#issues-view.issues-enter .tools{animation:issues-card-in 360ms cubic-bezier(.22,.7,.2,1) both}
+#issues-view.issues-enter>.right{animation:issues-detail-in 480ms cubic-bezier(.22,.7,.2,1) 60ms both;will-change:opacity,transform}
+@keyframes issues-card-in{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes issues-detail-in{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){#issues-view.issues-enter #issues .issue,#issues-view.issues-enter .tools,#issues-view.issues-enter>.right{animation:none!important;opacity:1;transform:none;will-change:auto}}
+@media print{#issues-view.issues-enter #issues .issue,#issues-view.issues-enter .tools,#issues-view.issues-enter>.right{animation:none;opacity:1;transform:none}}
+
+/* Stable anchors keep the independent scroll panes and 01–06 navigation intact. */
+#issues-view .issue-reveal-slot{display:flow-root}
+#issues-view .issue-reveal-slot.issue-scroll-pending>.issue,#issues-view .map-step.issue-scroll-pending>.step-toggle,#issues-view .map-step.issue-scroll-pending>.step-body{opacity:0;transform:translateY(24px)}
+#issues-view .issue-reveal-slot.issue-scroll-revealing>.issue,#issues-view .map-step.issue-scroll-revealing>.step-toggle,#issues-view .map-step.issue-scroll-revealing>.step-body{animation:issues-scroll-in 480ms cubic-bezier(.22,.7,.2,1) var(--issue-scroll-delay,0ms) both;will-change:opacity,transform}
+@keyframes issues-scroll-in{from{opacity:0;transform:translateY(var(--issue-scroll-from,24px))}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){#issues-view .issue-reveal-slot>.issue,#issues-view .map-step>.step-toggle,#issues-view .map-step>.step-body{animation:none!important;opacity:1!important;transform:none!important;will-change:auto}}
+@media print{#issues-view .issue-reveal-slot>.issue,#issues-view .map-step>.step-toggle,#issues-view .map-step>.step-body{animation:none!important;opacity:1!important;transform:none!important}}
+
+/* Exit fades follow the moving edge; entering animations can run independently. */
+#issues-view .issue-scroll-surface{filter:var(--issue-exit-filter,none);translate:var(--issue-exit-translate,none);transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease,scale .18s ease,filter .16s linear,translate .16s linear}
+#issues-view #content.issue-tab-enter{animation:issues-tab-fade 260ms ease-out both}
+@keyframes issues-tab-fade{from{opacity:.25}to{opacity:1}}
+#issues-view .issue-scroll-slot{display:flow-root;min-width:0}
+#issues-view .issue-evidence-slot{margin:13px 0}
+#issues-view .issue-evidence-slot>.evidence{margin:0}
+#issues-view .issue-grid-slot>.chart-card,#issues-view .issue-grid-slot>.share-tile{height:100%;margin:0}
+#issues-view .issue-scroll-slot.issue-scroll-pending>*{opacity:0;transform:translateY(24px)}
+#issues-view .issue-scroll-slot.issue-scroll-revealing>*{animation:issues-scroll-in 480ms cubic-bezier(.22,.7,.2,1) var(--issue-scroll-delay,0ms) both;will-change:opacity,transform}
+#issues-view .issue-number-pending{opacity:0}
+#issues-view .issue-number-revealing{animation:issues-number-in 560ms ease var(--issue-number-delay,0ms) both}
+@keyframes issues-number-in{from{opacity:0}to{opacity:1}}
+.three-stop-overview .cover-stage[data-bottom-trim=true]{padding-bottom:0}
+.three-stop-overview .cover-stage[data-bottom-trim=true] .cover-scroll-cue{padding-bottom:6px}
+@media(prefers-reduced-motion:reduce){#issues-view .issue-scroll-surface{filter:none!important;translate:none!important;transition:none}#issues-view #content.issue-tab-enter,#issues-view .issue-scroll-slot>*,#issues-view .issue-number-pending,#issues-view .issue-number-revealing{animation:none!important;opacity:1!important;transform:none!important}}
+@media print{#issues-view .issue-scroll-surface{filter:none!important;translate:none!important}#issues-view #content.issue-tab-enter,#issues-view .issue-scroll-slot>*,#issues-view .issue-number-pending,#issues-view .issue-number-revealing{animation:none!important;opacity:1!important;transform:none!important}}
+/* Professional viewpoints are separate from user feedback counts. */
+.ins-prof-reference{display:grid;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.ins-prof-reference>small{display:block}.ins-prof-reference p{margin:0;line-height:1.65}
+
+/* Approved reference: two 9:16 slots from the 17:23 王者荣耀 cover.
+   The product image never sets the frame height. */
+.cover-photo.cover-product-visual{container-type:inline-size}
+.cover-photo.cover-product-visual>.cover-gallery-images,
+.cover-photo.cover-product-visual>img{height:calc((100cqw - 6px) * 8 / 9);min-height:0;aspect-ratio:auto}
+.cover-photo.cover-gallery .cover-gallery-images{display:flex;align-items:center;justify-content:center;gap:6px}
+.cover-photo.cover-gallery .cover-gallery-images img{flex:0 1 auto;width:auto;height:100%;min-width:0;min-height:0;max-width:calc((100% - 6px)/2);max-height:100%;object-fit:contain;object-position:center}
+.cover-photo.cover-product-visual>img{object-fit:contain;object-position:center}
+
+/* Source notes occupy the reference caption slot; long notes stay inside it. */
+.cover-photo.cover-product-visual figcaption{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;height:95px;overflow:hidden}
+.cover-photo.cover-product-visual figcaption>span{min-height:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.cover-photo.cover-product-visual figcaption>small{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:760px){.cover-photo.cover-product-visual figcaption{height:76px}}

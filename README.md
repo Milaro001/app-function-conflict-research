@@ -1,8 +1,16 @@
-# App 功能冲突调研分析 V1.0
+# App 功能冲突调研分析 V1.1
 
 给出一个 App 名称，让 AI 整理用户反馈，找出具体的功能问题和相互冲突的需求，再提出有原文依据的改进方案。
 
 结果先放在交互网页里。你可以查看数据、原话和分析，选择继续补采、整理设计任务，或制作原型与验证方案。需要向别人交付时，可以选 PPT、Word、Excel 或可点击的网页原型。
+
+## V1.1 更新
+
+- 同步2026-10-29已实际使用的三页总览、封面框尺寸锁定、逐步引文复查、专业参考映射与动画呈现规则。
+- 登录或验证码异常先说明受影响平台并询问，再按用户授权打开对应专用静音窗口。
+- 后续文件沿用网页中已经选定的交付形式；真实测试未开展时只交计划。
+- 增加离线报告导出工具，以及报告、原型、PPT统一首页和ZIP转交规范；移除作者的对话绑定，保留本地反馈导出。
+- 本机原位升级只改显示名和所需文件，保留既有运行目录与登录资料；完整包继续附固定版本的三个PPT Skill。
 
 ## 这套 Skill 做什么
 
@@ -17,7 +25,7 @@
 
 ## 直接下载
 
-打开 [Releases](https://github.com/Milaro001/app-function-conflict-research/releases)，下载 `App功能冲突调研分析_V1.0.0_交付包.zip`。交付包包含主 Skill、固定版本的三个 PPT Skill、安装器、运行说明及示例网页。
+打开 [Releases](https://github.com/Milaro001/app-function-conflict-research/releases)，下载 `App-function-conflict-research_V1.1.0.zip`。交付包包含主 Skill、固定版本的三个 PPT Skill、安装器、运行说明及示例网页。
 
 只下载 GitHub 自动生成的 Source code 压缩包时，三个 PPT Skill 会由安装器按固定版本从其官方仓库取得。完整交付 ZIP 已附带这些源码，无需再次下载 Skill 源码；Python 依赖和浏览器仍在目标电脑安装。
 
@@ -33,7 +41,7 @@ python3 install.py --agent workbuddy --mirror china
 
 Windows 可使用 `py install.py --agent workbuddy --mirror china`。只复制文件、不配置环境，可加 `--no-setup`；查看安装位置、不执行安装，可加 `--dry-run`。已有同名主 Skill 不会被静默覆盖，明确更新时使用 `--replace` 保留备份。
 
-安装器会安装独立的 `contradiction-review-v1`，不覆盖 V0.4。默认研究目录为 `~/app-research-workspace-v1.0`。各平台首次登录由使用者自己完成，后续尽量复用该电脑的独立登录资料。Cookie、浏览器用户目录和数据库不在交付包中。
+安装器会安装独立的 `contradiction-review-v1`，不覆盖 V0.4。默认研究目录为 `~/app-research-workspace-v1.1`。各平台首次登录由使用者自己完成，后续尽量复用该电脑的独立登录资料。Cookie、浏览器用户目录和数据库不在交付包中。
 
 完整参数见 `python3 install.py --help`。没有本地文件、代码执行、浏览器或网络能力的聊天平台，只能使用其能够执行的分析部分。
 
@@ -67,6 +75,14 @@ Word、Excel 所列的主机插件没有复制进这个开源交付包。其他 
 - `docs/index.html`：示例入口。
 - `docs/prototype/index.html`：淘宝支付异常恢复的A/B交互原型。
 - 完整交付包中的 `docs/`：可离线打开的报告与原型，以及配套PPT。
+
+离线报告可执行：
+
+```bash
+python3 skills/contradiction-review-v1/scripts/export_offline_report.py /path/to/report --output /path/to/offline-report
+```
+
+这条命令复制报告与数据，去掉作者对话接收器，将阅读反馈改为本地导出。报告、原型与PPT的完整离线交付按 `references/offline-delivery.md` 整理；PPT原件本来可以离线打开，也可附静态网页预览，来源网站回查仍需联网。
 
 本地网页可以发给别人离线打开。需要网址时，要发布到静态托管平台。发布成功、访问权限公开、匿名浏览器实际访问通过，是分别检查的状态。示例网页的按钮不会向作者的私人对话自动发送消息。
 

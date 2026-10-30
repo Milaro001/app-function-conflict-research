@@ -1,7 +1,7 @@
 const g2Choices=[['unreviewed','暂未判断'],['approve','分析与原文一致'],['limited','基本成立，需要补充适用条件'],['supplement','材料不足，请继续补采'],['recode','理解有误，请重新分析'],['presentation','请改进页面和文字表达']];
 const g3Choices=[['unreviewed','暂未选择'],['adopt','整理成具体设计任务'],['test','先做原型或验证'],['supplement','继续补采相关反馈'],['defer','先暂缓这个问题'],['rework','重新比较改法']];
 const deliveryFormats={pptx:'PPT（.pptx，推荐）',docx:'Word（.docx，适合审阅）',xlsx:'表格（.xlsx，适合分工与跟踪）',html:'交互原型网页（附验证计划）'};
-const platformNames={appbao:'应用宝',appstore:'App Store',xhs:'小红书',wb:'微博',zhihu:'知乎',bili:'B站',douyin:'抖音',web:'公开网页'};
+const platformNames={appbao:'应用宝',appstore:'App Store',xhs:'小红书',wb:'微博',zhihu:'知乎',bili:'B站',douyin:'抖音',web:'公开网页',woshipm:'人人都是产品经理（方案参考）',uisdc:'优设（方案参考）',ui_cn:'UI中国（方案参考）',zcool:'站酷（方案参考）'};
 const draftKey=storageKey+':drafts';let drafts={};
 try{drafts=JSON.parse(localStorage.getItem(draftKey)||'{}');if(!drafts||typeof drafts!=='object'||Array.isArray(drafts))drafts={}}catch(_){}
 const returnUrl=report.handoff?.conversation_url||'';
@@ -60,9 +60,9 @@ function feedbackText(records=decisions){
 }
 function drawReview(root,i){
  const portableMode=!report.handoff?.local_bridge;
- const intro=add(root,'div',undefined,'review-intro');add(intro,'strong',portableMode?'选择下一步与交付形式，导出可交给Agent继续处理的任务文件。':'选好下一步和交付形式，点击发送后我会在本次对话继续处理。');
+ const intro=add(root,'div',undefined,'review-intro');add(intro,'strong','选好下一步和交付形式，点击发送后我会在本次对话继续处理。');
  add(intro,'p','选择“设计任务”或“原型与验证”后，请选择交付形式。默认推荐PPT，你可以改为Word或表格。');
- add(intro,'p',portableMode?'当前网页没有配置对话接收器。导出文件后，在支持的Agent中附上文件并要求继续；导出本身不会自动制作交付物。':'发送会把当前议题、所选行动、文件形式和补充要求直接交给本次对话。你可以留在页面阅读，后续结果会在对话中交付。');
+ add(intro,'p',portableMode?'当前尚未连接原对话接收服务，连接后可直接发送。复制和导出只作备份。':'发送会把当前议题、所选行动、文件形式和补充要求直接交给本次对话。你可以留在页面阅读，后续结果会在对话中交付。');
  const saved=drafts[i.id]||decisions[i.id]||{},form=add(root,'div',undefined,'form');
  const step1=add(form,'section',undefined,'review-step');add(step1,'h3','1. 你认为分析是否准确？');
  const g2Label=add(step1,'label','对当前分析的判断'),g2=add(g2Label,'select');g2.setAttribute('aria-label','分析判断');
@@ -95,12 +95,13 @@ function drawReview(root,i){
   focusBox.hidden=!['supplement','rework'].includes(action);focusLabel.firstChild?.nodeType===Node.TEXT_NODE&&focusLabel.firstChild.remove();focusLabel.prepend(document.createTextNode(action==='rework'?'重点重新比较什么？（选填）':'重点补采什么？（选填）'));
   focus.placeholder=action==='rework'?'例如：比较独立入口和混合信息流的代价':'例如：最近30天、同一功能、具体使用经历和完整回复';platforms.hidden=action!=='supplement';
   const d=capture();drafts[i.id]=d;try{localStorage.setItem(draftKey,JSON.stringify(drafts))}catch(_){}
-  next.replaceChildren();add(next,'h3','我收到后会做什么');const steps=nextSteps(d.g2,d.g3,d);if(steps.length)list(next,steps);else add(next,'p','请选择一项判断或下一步行动。');add(next,'p',portableMode?'点击底部导出后续任务，附给Agent并要求继续即可沿用这些选择。':'点击底部发送后提交这些任务；后续结果将在本次对话中显示。','muted');
+  next.replaceChildren();add(next,'h3','我收到后会做什么');const steps=nextSteps(d.g2,d.g3,d);if(steps.length)list(next,steps);else add(next,'p','请先选择下一步行动。');add(next,'p','点击底部发送后提交这些任务；后续结果将在本次对话中显示。','muted');
   previewText.value=feedbackText({[i.id]:d});applySendState();
  }
  function setStatus(text,error=false){status.textContent=text;status.classList.toggle('error-note',error)}
- function saveChoice(){
-  const d=capture();if(d.g2==='unreviewed'&&d.g3==='unreviewed'&&!d.reason){setStatus('请先选择一项判断或下一步，或写一句反馈。',true);g3.focus();return null}
+ function saveChoice(requireNext=false){
+  const d=capture();if(requireNext&&d.g3==='unreviewed'){setStatus('请先选择下一步，再发送到本次对话。',true);g3.focus();return null}
+  if(d.g2==='unreviewed'&&d.g3==='unreviewed'&&!d.reason){setStatus('尚无可保存的内容；发送前请先选择下一步。',true);return null}
   d.next_steps=nextSteps(d.g2,d.g3,d);d.saved_at=new Date().toISOString();d.record_type='local_user_choice';d.external_approval=false;decisions[i.id]=d;
   try{localStorage.setItem(storageKey,JSON.stringify(decisions))}catch(_){setStatus('浏览器未能保存在本机，请复制或导出反馈。',true)}return d;
  }
@@ -108,13 +109,13 @@ function drawReview(root,i){
  function storeSubmission(value){submitted[i.id]=value;try{localStorage.setItem(storageKey+':submitted',JSON.stringify(submitted))}catch(_){}}
  function applySendState(){
   const old=submitted[i.id],same=old?.fingerprint===fingerprint();
-  send.disabled=busy||(!portableMode&&(!bridge.ready||!bridge.canSubmit||(same&&old.status==='queued')));
   const d=capture(),formatName={pptx:'PPT',docx:'Word',xlsx:'表格',html:'网页原型'}[d.delivery_format];
-  send.textContent=portableMode?'导出后续任务'+(formatName?'（'+formatName+'）':''):busy?'正在发送…':same&&old.status==='queued'?'已发送到本次对话':same&&old.status==='unconfirmed'?'核对提交状态':d.g3==='adopt'?'发送并制作 '+formatName:d.g3==='test'?'发送并制作 '+formatName+' 验证方案':effectiveAction(d)==='supplement'?'发送并补采':d.g3==='rework'?'发送并重新比较':d.g3==='defer'?'发送暂缓决定':'发送并开始后续任务';
-  if(!busy){if(portableMode)setStatus('当前使用跨平台任务文件交接，尚未向任何对话发送。');else if(same&&old.status==='queued')setStatus('已发送到本次对话。后续结果会在对话中交付；当前有任务时会排队继续。');else if(same&&old.status==='unconfirmed')setStatus('提交结果尚未确认，请先查看本次对话；核对同一请求不会重复发送。',true);else if(bridge.canSubmit)setStatus('选好下一步后即可发送，补充说明可以留空。');else setStatus('尚未连接直接发送服务，请从本机最新报告入口打开。',true)}
+  send.disabled=busy||d.g3==='unreviewed'||!bridge.ready||!bridge.canSubmit||(same&&old.status==='queued');
+  send.textContent=busy?'正在发送…':same&&old.status==='queued'?'已发送到本次对话':same&&old.status==='unconfirmed'?'核对提交状态':d.g3==='adopt'?'发送并制作 '+formatName:d.g3==='test'?'发送并制作 '+formatName+' 验证方案':d.g3==='supplement'?'发送并补采':d.g3==='rework'?'发送并重新比较':d.g3==='defer'?'发送暂缓决定':'发送并开始后续任务';
+  if(!busy){if(d.g3==='unreviewed')setStatus('请先选择下一步，再发送到本次对话。',true);else if(same&&old.status==='queued')setStatus('已发送到本次对话。后续结果会在对话中交付；当前有任务时会排队继续。');else if(same&&old.status==='unconfirmed')setStatus('提交结果尚未确认，请先查看本次对话；核对同一请求不会重复发送。',true);else if(bridge.canSubmit)setStatus('已选择下一步，可以发送；分析判断和补充说明可以留空。');else setStatus('尚未连接直接发送服务，请从本机最新报告入口打开。',true)}
  }
  async function doSubmit(){
-  const d=saveChoice();if(!d)return;
+  const d=saveChoice(true);if(!d)return;
   if(!bridge.ready||!bridge.canSubmit){setStatus('尚未连接本次对话，暂时不能发送。',true);return}
   const key=fingerprint(),old=submitted[i.id];const requestId=old?.fingerprint===key?old.request_id:crypto.randomUUID();
   storeSubmission({fingerprint:key,request_id:requestId,status:'submitting'});busy=true;applySendState();setStatus('正在把所选任务发送到本次对话…');
@@ -122,7 +123,7 @@ function drawReview(root,i){
   catch(error){storeSubmission({fingerprint:key,request_id:requestId,status:'unconfirmed'});if(error.code==='report_changed_refresh_required')setStatus('报告已更新，请刷新后重新选择任务。',true)}
   finally{busy=false;applySendState()}
  }
- send.onclick=portableMode?()=>{const d=saveChoice();if(!d)return;const payload={record_type:'followup_request',app:report.app,bundle_id:report.bundle_id,issue_id:i.id,decision_object:i.decision_object,decision:d,external_approval:false,execution_status:'not_started',evidence_ids:i.anchors.map(a=>a.evidence_id)};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})),a=el('a');a.href=url;a.download=report.app+'-'+i.id+'-后续任务.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setStatus('后续任务已导出；在Agent中附上文件并要求继续。尚未自动发送或制作。')}:doSubmit;
+ send.onclick=doSubmit;
  copy.onclick=async()=>{const d=saveChoice();if(!d)return;copy.disabled=true;try{const method=await copyFeedback(feedbackText({[i.id]:d}));if(method)setStatus('已复制备份。直接发送请使用底部的发送按钮。');else{preview.open=true;previewText.focus();previewText.select();setStatus('未能自动复制，完整任务内容已选中，可手动复制备份。',true)}}finally{copy.disabled=false}};
  if(back)back.onclick=async event=>{if(!bridge.ready)return;event.preventDefault();try{await bridgeRequest('/api/open-conversation')}catch(_){bridge.ready=false;window.location.assign(returnUrl)}};
  save.onclick=()=>{if(saveChoice())setStatus('草稿已保存在本机；点击底部发送后才会提交。')};

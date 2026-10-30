@@ -8,6 +8,41 @@ def web_url(value):
     p=urlsplit(value)
     if p.scheme not in {'https','http'} or not p.hostname or p.username or p.password:raise ValueError('invalid framework source URL')
 
+def validate_hero_image(photo, required=False):
+    if not photo:
+        if required:raise ValueError('a sourced real product interface image is required for the cover')
+        return False
+    if not isinstance(photo,dict):raise ValueError('invalid hero image')
+    if photo.get('kind') not in {'app_screenshot','website_screenshot','official_image','user_screenshot','report_screenshot'}:
+        raise ValueError('hero image must show a real product interface from direct capture, official material, a user post or a report; no generated illustration')
+    web_url(photo.get('source_url'))
+    for k in ('alt','caption','author','usage_note'):
+        if not isinstance(photo.get(k),str) or not photo[k].strip():raise ValueError('hero image needs '+k)
+    from datetime import datetime
+    try:
+        captured=datetime.fromisoformat(photo['captured_at'].replace('Z','+00:00'))
+        if captured.tzinfo is None:raise ValueError()
+    except (ValueError,KeyError,TypeError,AttributeError):raise ValueError('hero image needs timezone-aware captured_at')
+    if photo.get('license_url'):web_url(photo['license_url'])
+    data=photo.get('data','')
+    formats={'data:image/jpeg;base64,':b'\xff\xd8\xff','data:image/png;base64,':b'\x89PNG\r\n\x1a\n'}
+    prefix=next((x for x in formats if isinstance(data,str) and data.startswith(x)),None)
+    if not prefix:raise ValueError('hero image must embed JPEG or PNG data')
+    try:raw=base64.b64decode(data[len(prefix):],validate=True)
+    except Exception as exc:raise ValueError('invalid embedded hero image') from exc
+    if len(raw)>2_000_000 or not raw.startswith(formats[prefix]):raise ValueError('invalid or oversized hero image')
+    import hashlib
+    if photo.get('sha256')!=hashlib.sha256(raw).hexdigest():raise ValueError('hero screenshot hash mismatch')
+    return True
+
+
+def validate_hero_gallery(hero):
+    gallery=hero.get('images',[])
+    if not isinstance(gallery,list) or len(gallery)>4:raise ValueError('hero gallery must contain at most four real product images')
+    for image in gallery:validate_hero_image(image,required=True)
+    return gallery
+
+
 def validate_frameworks(analytics):
     presentation=analytics.get('presentation',{})
     if not isinstance(presentation,dict):raise ValueError('invalid presentation')
@@ -15,15 +50,8 @@ def validate_frameworks(analytics):
     hero=presentation.get('hero',{})
     if not isinstance(hero,dict):raise ValueError('invalid hero')
     photo=hero.get('image')
-    if photo:
-        if not isinstance(photo,dict):raise ValueError('invalid hero photo')
-        web_url(photo.get('source_url'));web_url(photo.get('license_url'))
-        if any(not isinstance(photo.get(k),str) or not photo[k].strip() for k in ('alt','caption','author','license')):raise ValueError('hero photo needs attribution')
-        data=photo.get('data','')
-        if not isinstance(data,str) or not data.startswith('data:image/jpeg;base64,'):raise ValueError('hero must embed JPEG data')
-        try:raw=base64.b64decode(data.split(',',1)[1],validate=True)
-        except Exception as exc:raise ValueError('invalid embedded hero photo') from exc
-        if len(raw)>2_000_000 or not raw.startswith(b'\xff\xd8\xff'):raise ValueError('invalid or oversized hero JPEG')
+    validate_hero_image(photo)
+    gallery=validate_hero_gallery(hero)
     frameworks=analytics.get('frameworks',{})
     if not isinstance(frameworks,dict):raise ValueError('invalid frameworks')
     rice=frameworks.get('rice',{})
@@ -54,4 +82,4 @@ def validate_frameworks(analytics):
             total+=1
         if len(used)!=len(set(used)) or set(used)!=expected:raise ValueError('service mappings must cover all mapped candidates')
         if any(k in quality for k in ('scores','ratings','gap_scores')):raise ValueError('no measured service score is available')
-    return {'service_records_checked':total,'hero_embedded':bool(photo)}
+    return {'service_records_checked':total,'hero_embedded':bool(photo),'hero_gallery_images_checked':len(gallery)}

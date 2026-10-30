@@ -59,6 +59,10 @@ class QuantificationIntegrity(unittest.TestCase):
         a['issue_stances']['I1'][0].update(stance='positive',target='查件',anchors=[dict(direction='positive',text='查件方便')])
         validate_analytics(a,report)  # P can contain praise of another explicit target.
 
+    def test_missing_stance_mapping_is_a_blocking_gap(self):
+        a,report=self.stance_fixture();a.pop('issue_stances')
+        with self.assertRaisesRegex(ValueError,'issue_stances is required'):validate_analytics(a,report)
+
     def test_stance_cannot_drop_or_duplicate_a_mapped_record(self):
         a,report=self.stance_fixture();a['issue_stances']['I1']=[]
         with self.assertRaisesRegex(ValueError,'stance IDs'):validate_analytics(a,report)

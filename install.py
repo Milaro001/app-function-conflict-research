@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install App research V1.0 and its pinned PPT Skills into the selected Agent."""
+"""Install App research V1.1 and its pinned PPT Skills into the selected Agent."""
 import argparse
 from datetime import datetime,timezone
 import json
@@ -46,6 +46,8 @@ def main():
     try:
         target.parent.mkdir(parents=True,exist_ok=True)
         shutil.copytree(source,target,ignore=shutil.ignore_patterns('.venv','.setup','__pycache__','*.pyc','.env'))
+        if backup and (backup/'runtime.json').is_file():
+            shutil.copy2(backup/'runtime.json',target/'runtime.json')
     except Exception:
         if target.exists():shutil.rmtree(target)
         if backup:backup.rename(target)

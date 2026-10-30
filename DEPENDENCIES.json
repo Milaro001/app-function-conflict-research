@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_version": "1.0.0",
+  "release_version": "1.1.0",
   "core_skill": "contradiction-review-v1",
   "presentation_skills": [
     {

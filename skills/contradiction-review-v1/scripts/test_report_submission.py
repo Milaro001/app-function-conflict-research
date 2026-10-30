@@ -53,4 +53,16 @@ class SubmissionIntegrity(unittest.TestCase):
         for d in [{'g3':{}},{'g3':'adopt','delivery_format':{}},{'g3':'supplement','platforms':[{}]}]:
             with self.assertRaises(m.InvalidSubmission):m.normalize_decision(d)
 
+    def test_judgment_or_feedback_alone_cannot_send(self):
+        for d in [{}, {'g2':'approve'}, {'reason':'请看反馈'}, {'g2':'supplement','reason':'补一点材料'}]:
+            self.payload['decision']=d
+            with self.assertRaisesRegex(m.InvalidSubmission,'next_action_required'):self.store.submit(self.payload)
+        self.assertEqual(self.sent,[])
+        self.assertFalse(list((self.root/'private').glob('*.json')))
+
+    def test_next_action_alone_can_send_without_judgment_or_note(self):
+        self.payload['decision']={'g3':'test','delivery_format':'html'}
+        self.assertTrue(self.store.submit(self.payload)['message_queued'])
+        self.assertEqual(len(self.sent),1)
+
 if __name__=='__main__':unittest.main()

@@ -11,7 +11,7 @@ UUID=r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}'
 G2={'unreviewed','approve','limited','supplement','recode','presentation'}
 G3={'unreviewed','adopt','test','supplement','defer','rework'}
 FORMATS={'pptx':'PPT（.pptx）','docx':'Word（.docx）','xlsx':'表格（.xlsx）','html':'交互原型网页'}
-PLATFORMS={'appbao','appstore','xhs','wb','zhihu','bili','douyin','web'}
+PLATFORMS={'appbao','appstore','xhs','wb','zhihu','bili','douyin','web','woshipm','uisdc','ui_cn','zcool'}
 
 class InvalidSubmission(ValueError):pass
 class SubmissionConflict(ValueError):pass
@@ -34,7 +34,7 @@ def normalize_decision(d):
     g2=d.get('g2','unreviewed');g3=d.get('g3','unreviewed')
     if not isinstance(g2,str) or not isinstance(g3,str) or g2 not in G2 or g3 not in G3:raise InvalidSubmission('invalid_action')
     reason=text_field(d,'reason',6000)
-    if g2==g3=='unreviewed' and not reason:raise InvalidSubmission('empty_decision')
+    if g3=='unreviewed':raise InvalidSubmission('next_action_required')
     raw_format=d.get('delivery_format')
     fmt='pptx' if raw_format is None or raw_format=='' else raw_format
     if g3 in ('adopt','test'):
@@ -93,7 +93,7 @@ class SubmissionStore:
             'thread_id':self.thread_id,'replayed':replayed,'message_queued':record['status']=='queued'}
     def prompt(self,data,issue,d,request_id,path):
         lines=['【App功能调研后续任务：用户已在网页点击发送】',
-            '请继续当前调研的交付阶段，依据 $contradiction-review-v1 的后续交付规则执行下面的选择。',
+            '请继续当前调研的交付阶段，依据 $contradiction-review-v0-4 的后续交付规则执行下面的选择。',
             '无需再让用户复制粘贴或重复确认已经选定的文件形式。',
             '提交编号：'+request_id,'产品：'+data['app'],'决策对象：'+issue['decision_object'],
             '分析判断：'+d['g2'],'下一步行动：'+d['g3'],

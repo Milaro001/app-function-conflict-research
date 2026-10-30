@@ -224,6 +224,11 @@ def build(args):
         else:rows,meta=[],dict(status='input_not_configured')
         if platform in args.defer:meta.update(status='deferred_by_user',collection_attempts_resumed=False)
         sources[platform]=meta;records.extend(rows)
+    import professional_sources
+    professional_rows,professional_meta=professional_sources.merged(collect.OUTPUT,args.app)
+    records.extend(professional_rows)
+    sources['web']['professional_reference_articles']=len(professional_rows)
+    if professional_rows and not web:sources['web']['status']='professional_reference_import'
     as_of=date_value(args.as_of) if args.as_of else datetime.now(timezone.utc)
     if not as_of:raise ValueError('as-of requires an ISO timestamp with timezone')
     records,conflicts=annotate(records,as_of)
@@ -241,7 +246,16 @@ def build(args):
             published_max=max((r['published_at'] for r in rows if date_value(r.get('published_at'))),default=None))
     out=Path(args.output or collect.OUTPUT/'corpus');out.mkdir(parents=True,exist_ok=True)
     with (out/'evidence.jsonl').open('w',encoding='utf-8') as f:
-        for row in records:f.write(json.dumps(row,ensure_ascii=False)+'\n')
+        for row in records:f.write(json.dumps(row,ensure_ascii=False).replace('\u2028','\\u2028').replace('\u2029','\\u2029').replace('\u0085','\\u0085')+'\n')
+    references=[]
+    for r in records:
+        if r.get('material_role')!='professional_reference':continue
+        q=r['quality_review']
+        references.append(dict(id=r['id'],evidence_id=r['evidence_id'],title=r.get('title'),site=r['site'],author=r.get('author'),
+            source_url=r['source_url'],published_at=r.get('published_at'),published_at_display=r.get('published_at_display'),
+            anchor=r['body'],app_relation=q['app_relation'],viewpoint=q['viewpoint'],quality_reason=q['rationale'],
+            limitations=q['limitations'],counts_as_user_feedback=False))
+    collect.write_json(out/'professional-references.json',references)
     collect.RUNTIME.mkdir(parents=True,exist_ok=True)
     with sqlite3.connect(collect.RUNTIME/'evidence.sqlite') as db:
         db.execute('CREATE TABLE IF NOT EXISTS corpus_entries_v2(app TEXT,platform TEXT,kind TEXT,id TEXT,payload TEXT,PRIMARY KEY(app,platform,kind,id))')
@@ -250,7 +264,7 @@ def build(args):
         db.executemany('INSERT INTO corpus_entries_v2 VALUES(?,?,?,?,?)',[(args.app,r['platform'],r['kind'],r['id'],json.dumps(r,ensure_ascii=False)) for r in records])
     comments=[r for r in records if r['kind']=='comment' and r['text_usable']]
     report=dict(app=args.app,built_at=collect.now(),as_of=as_of.isoformat(),sources=sources,
-        total_record_ids=len(records),usable_comment_bodies=len(comments),
+        total_record_ids=len(records),usable_comment_bodies=len(comments),professional_sources=professional_meta,
         unique_comment_text_groups=len({r['text_group'] for r in comments}),
         recent_12m_unique_comment_text_groups=len({r['text_group'] for r in comments if r['temporal_layer'] in ('recent_90d','recent_12m')}),
         exact_text_groups_all_bodies=len({r['text_group'] for r in records if r['text_usable']}),
@@ -270,7 +284,8 @@ def build(args):
     lines+=['','正文可用只表示不是空白或纯符号，尚未判定是否为具体功能反馈。帖子正文单列，不作为评论数量重复相加。',
         '近12个月以各条评论的发布时间判断；不能因为旧帖最近被回复，就将全帖算作近期。',
         '应用宝与App Store由公开接口采集（无需登录）；论坛为既有缓存导入。社媒合并同一App各站全部已结束批次（试采与近期抽样），按来源ID去重，不重复计数；未接入或待登录不称采集通过。',
-        '核心社媒为小红书、微博、知乎；B站与抖音补充。各站实际状态见上表，扩量仍须按平台通过采集与上下文门槛。','',
+        '核心社媒为小红书、微博、知乎；B站与抖音补充。各站实际状态见上表，扩量仍须按平台通过采集与上下文门槛。',
+        f'专业社区选入{len(references)}篇参考文章，无数量门槛；候选、未审阅与选入分别记录。详见 professional-references.json 和 coverage.json/professional_sources，文章不计用户反馈。','',
         '详见 coverage.json 的各站翻页和缺口，以及 evidence.jsonl 中逐条原文与来源哈希。']
     (out/'来源整合结果.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')
     print(json.dumps({'output':str(out),'records':len(records),'usable_comment_bodies':len(comments),

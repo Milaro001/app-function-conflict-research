@@ -50,7 +50,7 @@ function drawList(){
  const items=report.issues.filter(i=>(!filter||filter===i.relation)&&(!q||(i.title+' '+i.decision_object).toLowerCase().includes(q)));
  if(!items.some(i=>i.id===selected))selected=items[0]?.id;
  if(!items.length)add(root,'p','当前没有匹配议题。','empty');
- for(const i of items){const b=add(root,'button',undefined,'issue');tone(b,i.relation);b.setAttribute('aria-pressed',String(i.id===selected));add(b,'strong',i.decision_object);add(b,'p',i.title,'issue-summary');add(b,'small',i.material_summary||(i.main_collection_eligible?'主收藏候选 · '+count(i.related_feedback)+' 条关联反馈':'观察与补证 · '+(i.related_feedback==null?'数量待核':count(i.related_feedback)+' 条关联反馈')));tag(b,i.relation);b.onclick=()=>goToIssue(i.id,tab)}
+ for(const i of items){const slot=add(root,'div',undefined,'issue-reveal-slot'),b=add(slot,'button',undefined,'issue');tone(b,i.relation);b.setAttribute('aria-pressed',String(i.id===selected));add(b,'strong',i.decision_object);add(b,'p',i.title,'issue-summary');add(b,'small',i.material_summary||(i.main_collection_eligible?'主收藏候选 · '+count(i.related_feedback)+' 条关联反馈':'观察与补证 · '+(i.related_feedback==null?'数量待核':count(i.related_feedback)+' 条关联反馈')));tag(b,i.relation);b.onclick=()=>goToIssue(i.id,tab)}
 }
 function drawAnalysis(root,i){
  if(drawReasoning(root,i))return;
@@ -72,25 +72,40 @@ function drawEvidence(root,i){
 }
 __ANALYTICS_SCRIPT__
 __HANDOFF_SCRIPT__
+let issueEntranceTimer=0;
+let issuePanelEntranceTimer=0;
+function clearIssuePanelEntrance(){clearTimeout(issuePanelEntranceTimer);issuePanelEntranceTimer=0;document.getElementById('content').classList.remove('issue-tab-enter')}
+function playIssuePanelEntrance(){clearIssuePanelEntrance();if(issueScrollPreference.matches)return;const panel=document.getElementById('content');void panel.offsetWidth;panel.classList.add('issue-tab-enter');issuePanelEntranceTimer=setTimeout(clearIssuePanelEntrance,300)}
+function clearIssueEntrance(){clearTimeout(issueEntranceTimer);issueEntranceTimer=0;document.getElementById('issues-view').classList.remove('issues-enter');for(const card of document.querySelectorAll('#issues .issue-entry-card'))card.classList.remove('issue-entry-card')}
+function playIssueEntrance(){
+ clearIssueEntrance();if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const workspace=document.getElementById('issues-view'),viewport=workspace.querySelector('aside').getBoundingClientRect();let order=0;
+ for(const card of document.querySelectorAll('#issues .issue')){const rect=card.parentElement.getBoundingClientRect();if(rect.bottom>viewport.top&&rect.top<viewport.bottom){card.classList.add('issue-entry-card');card.style.setProperty('--issue-enter-delay',Math.min(order++,4)*45+'ms')}}
+ void workspace.offsetWidth;workspace.classList.add('issues-enter');
+ issueEntranceTimer=setTimeout(clearIssueEntrance,660);
+}
 function showView(next){
+ const enteringIssues=next==='issues'&&view!=='issues';clearIssueEntrance();clearIssuePanelEntrance();clearIssueScrollMotion();
  view=next;document.getElementById('overview-view').hidden=view!=='overview';document.getElementById('issues-view').hidden=view!=='issues';
  for(const b of document.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===view));
- if(view==='issues')draw();
+ if(view==='issues'){draw();if(enteringIssues)playIssueEntrance()}
 }
-function goToIssue(id,nextTab='analysis'){selected=id;tab=nextTab;showView('issues');document.getElementById('content').scrollTop=0}
+function goToIssue(id,nextTab='analysis'){const changedTab=view==='issues'&&tab!==nextTab;selected=id;tab=nextTab;showView('issues');document.getElementById('content').scrollTop=0;if(changedTab)playIssuePanelEntrance()}
 function draw(){
+ clearIssueEntrance();clearIssuePanelEntrance();clearIssueScrollMotion();
  hideChartTip();clearReasonWires();resetReviewDock();drawList();for(const b of document.querySelectorAll('[data-tab]'))b.setAttribute('aria-selected',String(b.dataset.tab===tab));
  const root=document.getElementById('content');root.replaceChildren();const i=report.issues.find(v=>v.id===selected);
  if(!i){add(root,'h2',report.issues.length?'当前没有匹配议题':'当前证据不足');add(root,'p',report.issues.length?'请清空检索或调整关系筛选。':'尚未形成可判定议题，请查看采集来源与补证方向。','empty');return}
  add(root,'p','当前议题的决策对象','eyebrow');add(root,'h2',i.decision_object,'decision-title');if(tab!=='issue-data'&&!(tab==='analysis'&&i.insight)){const finding=add(root,'section',undefined,'finding');add(finding,'h3','当前结论');add(finding,'p',i.title)}
  document.getElementById('mobile-topic').value=i.id;
  if(tab==='analysis')drawAnalysis(root,i);else if(tab==='issue-data')drawIssueData(root,i);else if(tab==='evidence')drawEvidence(root,i);else drawReview(root,i);
+ installIssueScrollMotion();
 }
 for(const i of report.issues){const o=add(document.getElementById('mobile-topic'),'option',i.decision_object);o.value=i.id}
 document.getElementById('mobile-topic').onchange=e=>goToIssue(e.target.value,tab);
 const sourceDialog=document.getElementById('sources-dialog');document.getElementById('source-toggle').onclick=()=>sourceDialog.showModal();document.getElementById('source-close').onclick=()=>sourceDialog.close();
 document.getElementById('search').oninput=draw;document.getElementById('filter').onchange=draw;
-for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{tab=b.dataset.tab;document.getElementById('content').scrollTop=0;draw()};
+for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{const changed=tab!==b.dataset.tab;tab=b.dataset.tab;document.getElementById('content').scrollTop=0;draw();if(changed)playIssuePanelEntrance()};
 for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>showView(b.dataset.view);
 let colorTheme='dark';try{colorTheme=localStorage.getItem('app-conflict-color-theme')||'dark'}catch(_){}
 function applyColorTheme(){document.documentElement.dataset.theme=colorTheme;document.getElementById('theme-toggle').textContent=colorTheme==='dark'?'浅色':'深色'}

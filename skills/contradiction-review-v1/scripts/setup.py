@@ -263,7 +263,7 @@ def step_configure(vp, browser, node, args):
     current = json.loads((SKILL / 'runtime.json').read_text(encoding='utf-8'))
     workspace = Path(args.workspace).expanduser() if args.workspace else (
         Path(current['workspace']) if current.get('workspace') not in (None, '', '.') and Path(current['workspace']).is_absolute()
-        else Path.home() / 'app-research-workspace-v1.0')
+        else Path.home() / 'app-research-workspace-v1.1')
     workspace.mkdir(parents=True, exist_ok=True)
     cmd = [vp, SKILL / 'scripts/configure_runtime.py', '--workspace', workspace, '--python', vp]
     if browser:cmd += ['--browser', browser]
@@ -321,7 +321,7 @@ def check_ready():
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--workspace', help='research folder for runtime data and outputs (default: ~/app-research-workspace-v1.0)')
+    p.add_argument('--workspace', help='research folder for runtime data and outputs (default: ~/app-research-workspace-v1.1)')
     p.add_argument('--python', help='use this Python 3.11+ instead of searching')
     p.add_argument('--browser', help='use this Chrome/Edge/Chromium executable')
     p.add_argument('--full', action='store_true', help='also install the full upstream MediaCrawler requirements (large)')
